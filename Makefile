@@ -4,11 +4,11 @@
 #   git clone <repo> /root/onesimus-web && cd /root/onesimus-web
 #   sudo make sysdeps        (libpq-dev, python3-dev — build deps)
 #   sudo make install-system (systemd unit + nginx config + env template)
-#   sudo make deploy         (creates /srv/onesimus-web, venv, pip, migrate, static, start)
+#   sudo make update         (creates /srv/onesimus-web, venv, pip, migrate, static, start)
 #   make superuser           (create admin user — once only)
 #
-# Re-deploy after git pull:
-#   sudo make deploy         (install + migrate + static + restart)
+# Re-update after git pull:
+#   sudo make update         (install + migrate + static + restart)
 #
 # Service:     make start / stop / restart / status / logs
 # Development: make dev
@@ -20,7 +20,7 @@
         install-system \
         migrate static superuser mockdata \
         dev run \
-        deploy \
+        update \
         start stop restart status logs \
         lint test clean
 # $(DEPLOY_DIR) is a real file target — make creates it implicitly if missing
@@ -42,7 +42,7 @@ sysdeps:                           ## Install system build dependencies (require
 
 # ── Virtualenv ────────────────────────────────────────────────────────────────
 
-$(DEPLOY_DIR):                     # create deploy dir with correct ownership (implicit)
+$(DEPLOY_DIR):                     # create update dir with correct ownership (implicit)
 	sudo mkdir -p $(DEPLOY_DIR)
 	sudo chown www-data:www-data $(DEPLOY_DIR)
 
@@ -55,7 +55,7 @@ venv: $(DEPLOY_DIR)               ## Create virtualenv at $(DEPLOY_DIR)/.venv
 		echo "  venv already exists."; \
 	fi
 
-install: venv                      ## Install prod deps (creates deploy dir + venv implicitly)
+install: venv                      ## Install prod deps (creates update dir + venv implicitly)
 	$(PIP) install -q -r requirements-prod.txt
 
 install-dev:                       ## Install dev dependencies into local .venv
@@ -143,10 +143,10 @@ run:                               ## Run daphne from $(DEPLOY_DIR) (no setup)
 
 # ── Deployment ────────────────────────────────────────────────────────────────
 
-deploy: install migrate static     ## Full production deploy + service restart
+update: install migrate static     ## Install deps + migrate + collectstatic + restart
 	$(MAKE) restart
 	@echo ""
-	@echo "  Deployed. Service status:"
+	@echo "  Updated. Service status:"
 	@systemctl status $(SERVICE) --no-pager -l || true
 
 
@@ -194,5 +194,5 @@ help:
 	@grep -E '^[a-z][a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
 		awk 'BEGIN{FS=":[^#]*## "} {printf "    make \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
-	@echo "  Production deploy dir: $(DEPLOY_DIR)"
+	@echo "  Production update dir: $(DEPLOY_DIR)"
 	@echo ""
