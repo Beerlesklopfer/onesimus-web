@@ -5,9 +5,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 
 from .models import Setting, UserPreference
@@ -27,6 +28,15 @@ def _git_info():
         return h, b
     except Exception:
         return '', ''
+
+
+# ── Logout (GET + POST) ───────────────────────────────────────────────────
+
+@require_http_methods(['GET', 'POST'])
+def logout_view(request):
+    """Accept both GET and POST logout so bookmarks / direct URL calls work."""
+    auth_logout(request)
+    return redirect('/accounts/login/')
 
 
 # ── Profile dialog ────────────────────────────────────────────────────────
