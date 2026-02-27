@@ -1,6 +1,6 @@
 [Unit]
 Description=Onesimus Web Application (Daphne/ASGI)
-Documentation=https://github.com/Beerlesklopfer/onesimus-web
+Documentation=http://onesimus.io/web/
 After=network.target
 
 [Service]
