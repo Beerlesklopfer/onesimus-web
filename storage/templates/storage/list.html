@@ -1,25 +1,214 @@
 {% extends 'common/base.html' %}
 {% load static %}
 
-{% block title %}Storage - Onesimus{% endblock %}
+{% block title %}Storage — Onesimus{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Storage page ───────────────────────────────────────────────── */
+.st-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    font-size: var(--text-sm);
+}
+
+/* ── Local toolbar ──────────────────────────────────────────────── */
+.st-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 32px;
+    padding: 0 8px;
+    background: var(--color-bg-toolbar);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    gap: 4px;
+}
+.st-tb-group { display: flex; align-items: center; gap: 4px; }
+.st-tb-badge {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+.st-tb-btn {
+    all: unset;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; height: 22px;
+    font-size: var(--text-sm); font-family: var(--font-base);
+    color: var(--color-text); cursor: pointer;
+    border-radius: var(--border-radius-sm);
+    transition: background var(--transition-fast);
+}
+.st-tb-btn:hover { background: var(--color-bg-hover); }
+.st-tb-sep { width: 1px; height: 18px; background: var(--color-border); margin: 0 2px; }
+
+/* ── Main body ──────────────────────────────────────────────────── */
+.st-main {
+    flex: 1; min-height: 0;
+    display: flex; overflow: hidden;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────── */
+.st-sidebar {
+    width: 220px; flex-shrink: 0;
+    border-right: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+
+.st-sb-section {
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+.st-sb-top    { flex: 1 1 auto; min-height: 80px; overflow-y: auto; }
+.st-sb-bottom { flex: 0 0 auto; max-height: 55%; border-top: 1px solid var(--color-border); overflow-y: auto; }
+
+.st-sb-head {
+    position: sticky; top: 0;
+    padding: 4px 8px 3px;
+    font-size: 10px; font-weight: var(--font-bold);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    background: var(--color-bg-toolbar);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0; z-index: 1;
+}
+
+/* Storage items */
+.st-storage-item {
+    display: flex; align-items: center; gap: 7px;
+    padding: 4px 8px; cursor: pointer; user-select: none;
+}
+.st-storage-item:hover   { background: var(--color-bg-hover); }
+.st-storage-item.active  { background: var(--color-bg-hover); }
+.st-storage-item.active .st-si-name { color: var(--color-text-inverse); font-weight: var(--font-semibold); }
+
+.st-si-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.dot-online  { background: var(--color-status-success); }
+.dot-offline { background: var(--color-status-error); }
+.dot-unknown { background: var(--color-text-disabled); }
+
+.st-si-name  { font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-si-meta  { font-size: 10px; color: var(--color-text-muted); flex-shrink: 0; }
+
+/* Pool items (loaded via HTMX) */
+.st-pool-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 8px 3px 18px; cursor: pointer; user-select: none;
+}
+.st-pool-item:hover  { background: var(--color-bg-hover); }
+.st-pool-item.active { background: var(--color-bg-hover); }
+.st-pool-item.active .st-pi-name { color: var(--color-text-inverse); font-weight: var(--font-semibold); }
+
+.st-pi-icon { font-size: 10px; color: var(--color-text-muted); flex-shrink: 0; }
+.st-pi-name { font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-pi-vol  { font-size: 10px; color: var(--color-text-muted); flex-shrink: 0; }
+
+/* ── Stats panel ────────────────────────────────────────────────── */
+.st-panel {
+    flex: 1; min-width: 0;
+    overflow-y: auto;
+    background: var(--color-bg);
+}
+
+/* empty state */
+.st-empty {
+    display: flex; align-items: center; justify-content: center;
+    height: 100%; color: var(--color-text-muted); font-size: var(--text-sm);
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="panel">
-    <div class="panel-header">
-        <h1>Storage Management</h1>
-    </div>
-    <div class="panel-body">
-        <div class="alert alert-warning">
-            <strong>Storage Module</strong> - Planned for v0.3.0
+<div class="st-page">
+
+    <!-- ── Toolbar ───────────────────────────────────────────────────────── -->
+    <div class="st-toolbar">
+        <div class="st-tb-group">
+            <span class="st-tb-badge">
+                {{ storages.count }} storage{{ storages.count|pluralize }}
+            </span>
         </div>
-        <p>This page will display:</p>
-        <ul>
-            <li>Storage pool overview and statistics</li>
-            <li>Volume management</li>
-            <li>Storage consumption per job/client</li>
-            <li>Capacity forecasting</li>
-            <li>Archive and purge operations</li>
-        </ul>
+        <div class="st-tb-group">
+            <button class="st-tb-btn"
+                    hx-get="{% url 'storage:list' %}"
+                    hx-target=".st-page"
+                    hx-swap="outerHTML"
+                    title="Refresh">
+                ↻ Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Main ─────────────────────────────────────────────────────────── -->
+    <div class="st-main">
+
+        <!-- ── Sidebar ───────────────────────────────────────────────────── -->
+        <div class="st-sidebar">
+
+            <!-- Storages (top, scrollable) -->
+            <div class="st-sb-top">
+                <div class="st-sb-head">Storages</div>
+                {% for st in storages %}
+                <div class="st-storage-item {% if selected_storage.pk == st.pk %}active{% endif %}"
+                     hx-get="{% url 'storage:storage_pools' st.pk %}"
+                     hx-target="#pool-list"
+                     hx-swap="innerHTML"
+                     hx-on::after-request="document.querySelectorAll('.st-storage-item').forEach(e=>e.classList.remove('active')); this.classList.add('active'); document.querySelectorAll('.st-pool-item').forEach(e=>e.classList.remove('active'));"
+                     onclick="loadStorageStats({{ st.pk }})"
+                     title="{{ st.name }} · {{ st.address }}:{{ st.port }}">
+                    <span class="st-si-dot dot-{{ st.status }}"></span>
+                    <span class="st-si-name">{{ st.name }}</span>
+                    <span class="st-si-meta">{{ st.pool_count }}p</span>
+                </div>
+                {% empty %}
+                <div style="padding:8px;font-size:11px;color:var(--color-text-muted)">
+                    No storages. Run <code>manage.py populate_mock_storage</code>.
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pools (bottom, HTMX-loaded) -->
+            <div class="st-sb-bottom">
+                <div class="st-sb-head" id="pool-list-head">
+                    Pools{% if selected_storage %} · {{ selected_storage.name }}{% endif %}
+                </div>
+                <div id="pool-list">
+                    {% include 'storage/partials/pools.html' %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Stats panel ───────────────────────────────────────────────── -->
+        <div class="st-panel" id="st-stats-panel">
+            {% if stats %}
+                {% include 'storage/partials/storage_stats.html' %}
+            {% else %}
+                <div class="st-empty">Select a storage or pool</div>
+            {% endif %}
+        </div>
+
     </div>
 </div>
+
+<script>
+function loadStorageStats(pk) {
+    htmx.ajax('GET', `/storage/storage/${pk}/stats/`, {target: '#st-stats-panel', swap: 'innerHTML'});
+    document.getElementById('pool-list-head').textContent = 'Pools · loading…';
+}
+function loadPoolStats(pk, poolName) {
+    htmx.ajax('GET', `/storage/pool/${pk}/stats/`, {target: '#st-stats-panel', swap: 'innerHTML'});
+}
+// After HTMX loads pool list, update the header
+document.getElementById('pool-list').addEventListener('htmx:afterSwap', function() {
+    const active = document.querySelector('.st-storage-item.active .st-si-name');
+    const head   = document.getElementById('pool-list-head');
+    if (active && head) head.textContent = 'Pools · ' + active.textContent.trim();
+});
+</script>
 {% endblock %}

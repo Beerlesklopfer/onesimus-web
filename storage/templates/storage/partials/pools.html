@@ -1,0 +1,11 @@
+{% for pool in pools %}
+<div class="st-pool-item"
+     onclick="loadPoolStats({{ pool.pk }}, '{{ pool.name|escapejs }}'); document.querySelectorAll('.st-pool-item').forEach(e=>e.classList.remove('active')); this.classList.add('active');"
+     title="{{ pool.name }} · {{ pool.vol_count }} volume{{ pool.vol_count|pluralize }}">
+    <span class="st-pi-icon">▸</span>
+    <span class="st-pi-name">{{ pool.name }}</span>
+    <span class="st-pi-vol">{{ pool.vol_count }}v</span>
+</div>
+{% empty %}
+<div style="padding:6px 8px 6px 18px;font-size:11px;color:var(--color-text-muted)">No pools</div>
+{% endfor %}

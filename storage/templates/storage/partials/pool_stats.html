@@ -1,0 +1,119 @@
+<style>
+/* Pool stats re-uses .sp-* from storage_stats; define only what's new */
+.pp-vol-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.pp-vol-table th {
+    padding: 3px 6px; text-align: left;
+    color: var(--color-text-muted); font-weight: var(--font-semibold);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap; position: sticky; top: 0;
+    background: var(--color-bg-secondary);
+}
+.pp-vol-table td {
+    padding: 2px 6px; color: var(--color-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pp-vol-table tr:hover td { background: var(--color-bg-hover); }
+
+.pp-vol-badge {
+    display: inline-block; padding: 0 5px;
+    border-radius: var(--border-radius-sm);
+    font-size: 10px; font-weight: var(--font-semibold);
+}
+.vst-Append   { background: #1a3a1a; color: var(--color-status-success); }
+.vst-Full     { background: #1a1a3a; color: var(--color-status-pending); }
+.vst-Archive  { background: #2a1a3a; color: var(--color-status-info); }
+.vst-Recycle  { background: #3a2a00; color: var(--color-status-warning); }
+.vst-Purged   { background: var(--color-bg-tertiary); color: var(--color-text-muted); }
+.vst-Error    { background: #3a1a1a; color: var(--color-status-error); }
+.vst-Disabled { background: var(--color-bg-tertiary); color: var(--color-text-disabled); }
+.vst-Cleaning { background: #1a2a3a; color: var(--color-status-running); }
+</style>
+
+<div class="sp">
+
+    <!-- Header -->
+    <div class="sp-header">
+        <span style="font-size:12px;color:var(--color-text-muted)">▸</span>
+        <span class="sp-title">{{ pool.name }}</span>
+        <span class="sp-badge">{{ pool.pool_type }}</span>
+        {% if pool.storage %}<span class="sp-badge">{{ pool.storage.name }}</span>{% endif %}
+    </div>
+
+    <!-- Settings -->
+    <div class="sp-section">
+        <div class="sp-section-head">Pool settings</div>
+        <div class="sp-grid">
+            <span class="sp-label">Max volumes</span>
+            <span class="sp-value">{% if pool.max_volumes == 0 %}unlimited{% else %}{{ pool.max_volumes }}{% endif %}</span>
+            <span class="sp-label">Use catalog</span>
+            <span class="sp-value">{{ pool.use_catalog|yesno:"Yes,No" }}</span>
+            <span class="sp-label">Recycle oldest</span>
+            <span class="sp-value">{{ pool.recycle_oldest_volume|yesno:"Yes,No" }}</span>
+            <span class="sp-label">Recycle current</span>
+            <span class="sp-value">{{ pool.recycle_current_volume|yesno:"Yes,No" }}</span>
+        </div>
+    </div>
+
+    <!-- Volume summary -->
+    <div class="sp-section">
+        <div class="sp-section-head">Volumes</div>
+        <div class="sp-grid">
+            <span class="sp-label">Count</span>
+            <span class="sp-value">{{ vol_count }}</span>
+            <span class="sp-label">Total data</span>
+            <span class="sp-value">{{ total_bytes }}</span>
+            <span class="sp-label">Total files</span>
+            <span class="sp-value">{{ total_files|floatformat:"0" }}</span>
+        </div>
+
+        {% if status_bar %}
+        <div class="sp-statusbar" style="margin-top:8px;">
+            {% for seg in status_bar %}
+            <div class="sp-statusbar-seg"
+                 style="width:{{ seg.pct }}%; background:{{ seg.color }};"
+                 title="{{ seg.status }}: {{ seg.count }} ({{ seg.pct }}%)"></div>
+            {% endfor %}
+        </div>
+        <div class="sp-legend">
+            {% for seg in status_bar %}
+            <span class="sp-legend-item">
+                <span class="sp-legend-dot" style="background:{{ seg.color }};"></span>
+                {{ seg.status }} {{ seg.count }}
+            </span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Volume table -->
+    {% if volumes %}
+    <div class="sp-section">
+        <div class="sp-section-head">Volume list{% if vol_count > 50 %} (showing 50 of {{ vol_count }}){% endif %}</div>
+        <table class="pp-vol-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Bytes</th>
+                    <th>Files</th>
+                    <th>Last written</th>
+                    <th>First written</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vol in volumes %}
+                <tr>
+                    <td>{{ vol.name }}</td>
+                    <td><span class="pp-vol-badge vst-{{ vol.status }}">{{ vol.status }}</span></td>
+                    <td>{{ vol.bytes|filesizeformat }}</td>
+                    <td>{{ vol.files|floatformat:"0" }}</td>
+                    <td>{{ vol.last_written|date:"d.m.Y H:i"|default:"—" }}</td>
+                    <td>{{ vol.first_written|date:"d.m.Y H:i"|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</div>
