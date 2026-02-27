@@ -54,6 +54,9 @@ sync: $(DEPLOY_DIR)               ## Sync source code to $(DEPLOY_DIR)
 		--exclude='*.pyc' \
 		--exclude='staticfiles/' \
 		--exclude='.env' \
+		--exclude='db.sqlite3' \
+		--exclude='db.sqlite3-wal' \
+		--exclude='db.sqlite3-shm' \
 		./ $(DEPLOY_DIR)/
 	@echo "  code synced → $(DEPLOY_DIR)"
 
