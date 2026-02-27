@@ -13,6 +13,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: help venv install install-dev install-prod \
+        install-system \
         migrate static superuser \
         dev run \
         deploy \
@@ -23,6 +24,8 @@ PY      := .venv/bin/python
 PIP     := .venv/bin/pip
 MANAGE  := $(PY) manage.py
 SERVICE := onesimus
+DEPLOY_DIR := $(shell pwd)
+NGINX_AVAIL := /etc/nginx/sites-available/$(SERVICE)
 
 
 # ── Virtualenv ────────────────────────────────────────────────────────────────
@@ -41,6 +44,32 @@ install: venv                      ## Install production dependencies
 
 install-dev: venv                  ## Install development dependencies
 	$(PIP) install -q -r requirements-dev.txt
+
+install-system:                    ## Install systemd unit + nginx config (requires sudo)
+	@echo "  [systemd] installing contrib/onesimus.service …"
+	sudo cp contrib/onesimus.service /etc/systemd/system/$(SERVICE).service
+	sudo systemctl daemon-reload
+	sudo systemctl enable $(SERVICE)
+	@echo "  [systemd] $(SERVICE).service enabled."
+	@echo ""
+	@echo "  [nginx] copying contrib/onesimus.nginx.conf → $(NGINX_AVAIL) …"
+	sudo cp contrib/onesimus.nginx.conf $(NGINX_AVAIL)
+	@echo "  [nginx] config installed."
+	@echo ""
+	@echo "  ┌─────────────────────────────────────────────────────────────┐"
+	@echo "  │  Manual steps required:                                     │"
+	@echo "  │                                                             │"
+	@echo "  │  1) Edit server_name in $(NGINX_AVAIL)"
+	@echo "  │                                                             │"
+	@echo "  │  2) Enable the nginx site:                                  │"
+	@echo "  │       sudo ln -s $(NGINX_AVAIL) \\"
+	@echo "  │                 /etc/nginx/sites-enabled/$(SERVICE)         │"
+	@echo "  │       sudo nginx -t && sudo systemctl reload nginx          │"
+	@echo "  │                                                             │"
+	@echo "  │  3) Obtain TLS certificate:                                 │"
+	@echo "  │       sudo certbot --nginx -d <your-domain>                 │"
+	@echo "  └─────────────────────────────────────────────────────────────┘"
+	@echo ""
 
 
 # ── Django ────────────────────────────────────────────────────────────────────
