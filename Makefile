@@ -154,7 +154,9 @@ run:                               ## Run daphne from $(DEPLOY_DIR) (no setup)
 
 # ── Deployment ────────────────────────────────────────────────────────────────
 
-update: install migrate static     ## Install deps + migrate + collectstatic + restart + nginx reload
+update: install migrate static     ## Install deps + migrate + collectstatic + fix ownership + restart + nginx reload
+	@echo "  [chown] fixing ownership of $(DEPLOY_DIR) → www-data …"
+	sudo chown -R www-data:www-data $(DEPLOY_DIR)
 	$(MAKE) restart
 	@sudo nginx -t && sudo systemctl reload nginx && echo "  nginx reloaded." || echo "  nginx config error — skipped reload."
 	@echo ""
