@@ -1,0 +1,171 @@
+{% load static %}
+<div class="pd">
+
+    <!-- Header: avatar + identity -->
+    <div class="pd-header">
+        <div class="pd-avatar">
+            <img src="{% static 'common/icons/bareos.svg' %}" alt="Bareos" class="pd-avatar-img">
+        </div>
+        <div class="pd-identity">
+            <div class="pd-username">{{ profile_user.username }}</div>
+            <div class="pd-email">{{ profile_user.email|default:"—" }}</div>
+            <span class="pd-badge pd-badge-{{ role_key }}">{{ role_label }}</span>
+        </div>
+        <dl class="pd-meta">
+            <dt>Member since</dt>
+            <dd>{{ profile_user.date_joined|date:"Y-m-d" }}</dd>
+            <dt>Last login</dt>
+            <dd>{{ profile_user.last_login|date:"Y-m-d H:i"|default:"never" }}</dd>
+            <dt>Staff access</dt>
+            <dd>{% if profile_user.is_staff %}Yes{% else %}No{% endif %}</dd>
+        </dl>
+    </div>
+
+    <hr class="pd-sep">
+
+    <!-- ACL table -->
+    <div class="pd-acl-section">
+        <div class="pd-section-title">Access Control</div>
+        <table class="pd-acl-table">
+            <thead>
+                <tr>
+                    <th>Resource</th>
+                    <th>Access Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for acl in acls %}
+                <tr>
+                    <td>{{ acl.resource }}</td>
+                    <td>
+                        <span class="pd-acl-badge
+                            {% if acl.access == 'Full Control' %}pd-acl-full
+                            {% elif acl.access == 'No Access' %}pd-acl-none
+                            {% else %}pd-acl-partial{% endif %}">
+                            {{ acl.access }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="pd-footer">
+        <button class="btn btn-primary" onclick="overlayDialog.close()">Close</button>
+    </div>
+
+</div>
+
+<style>
+.pd { font-size: var(--text-sm); }
+
+/* ── Header ─────────────────────────────────────────────────── */
+.pd-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: 16px;
+    padding: 20px 24px 16px;
+}
+
+.pd-avatar-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+}
+
+.pd-identity { display: flex; flex-direction: column; gap: 4px; }
+
+.pd-username {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    line-height: 1.1;
+}
+
+.pd-email { color: var(--color-text-muted); }
+
+.pd-badge {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 1px 8px;
+    border-radius: 3px;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pd-badge-superadmin { background: rgba(240,106,106,0.18); color: var(--color-status-error); }
+.pd-badge-admin      { background: rgba(106,212,240,0.18); color: var(--color-status-info);  }
+.pd-badge-operator   { background: rgba(106,240,106,0.18); color: var(--color-status-success); }
+
+.pd-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 10px;
+    font-size: var(--text-xs);
+    align-self: start;
+    padding-top: 2px;
+}
+
+.pd-meta dt { color: var(--color-text-muted); white-space: nowrap; }
+.pd-meta dd { margin: 0; }
+
+/* ── Separator ───────────────────────────────────────────────── */
+.pd-sep { border: none; border-top: 1px solid var(--color-border); margin: 0 24px; }
+
+/* ── ACL table ───────────────────────────────────────────────── */
+.pd-acl-section { padding: 14px 24px 0; }
+
+.pd-section-title {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+}
+
+.pd-acl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+}
+
+.pd-acl-table th {
+    text-align: left;
+    padding: 4px 8px;
+    color: var(--color-text-muted);
+    font-weight: var(--font-semibold);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.pd-acl-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.pd-acl-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    white-space: nowrap;
+}
+
+.pd-acl-full    { background: rgba(106,240,106,0.15); color: var(--color-status-success); }
+.pd-acl-partial { background: rgba(106,212,240,0.15); color: var(--color-status-info);    }
+.pd-acl-none    { background: rgba(150,150,150,0.15); color: var(--color-text-disabled);  }
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.pd-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 14px 24px 18px;
+    border-top: 1px solid var(--color-border);
+    margin-top: 14px;
+}
+</style>

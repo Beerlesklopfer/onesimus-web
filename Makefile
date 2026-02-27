@@ -133,11 +133,13 @@ User.objects.filter(username='bareos').exists() \
   or User.objects.create_superuser('bareos','bareos@localhost','bareos')" \
 	&& echo "  superuser ready (bareos / bareos)"
 
-mockdata:                          ## Populate mock data (jobs, schedules, filesets)
+mockdata:                          ## Populate ALL mock data + fix ownership
 	$(MANAGE) populate_mockups --clear
 	$(MANAGE) populate_job_history --clear --days 120
 	$(MANAGE) populate_job_filesets --clear
 	$(MANAGE) populate_mock_schedules --clear
+	sudo chown -R www-data:www-data $(DEPLOY_DIR)
+	@echo "  mock data ready."
 
 
 # ── Development server ────────────────────────────────────────────────────────

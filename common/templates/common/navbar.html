@@ -52,7 +52,7 @@
                     {% if request.user.is_authenticated %}{{ request.user.username }}{% else %}Guest{% endif %}
                 </button>
                 <ul class="menubar-dropdown menubar-dropdown-right">
-                    <li><a class="menubar-dropdown-item" href="#">Profile</a></li>
+                    <li><a class="menubar-dropdown-item" href="#" id="action-profile">Profile</a></li>
                     <li class="menubar-sep"></li>
                     <li><button class="menubar-dropdown-item" onclick="document.getElementById('logout-form').submit()">Logout</button></li>
                 </ul>
@@ -160,6 +160,24 @@
                 })
                 .catch(function () {
                     overlayToast.show('Could not load About dialog', 'error');
+                });
+        });
+    }
+
+    // User → Profile
+    const profileLink = document.getElementById('action-profile');
+    if (profileLink) {
+        profileLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            closeAll();
+            fetch('{% url "common:profile" %}', { credentials: 'same-origin' })
+                .then(function (r) { return r.ok ? r.text() : Promise.reject(r.status); })
+                .then(function (html) {
+                    document.getElementById('overlay-dialog-content').innerHTML = html;
+                    overlayDialog.open('Profile');
+                })
+                .catch(function () {
+                    overlayToast.show('Could not load Profile', 'error');
                 });
         });
     }

@@ -29,6 +29,48 @@ def _git_info():
         return '', ''
 
 
+# ── Profile dialog ────────────────────────────────────────────────────────
+
+_ACL_RESOURCES = [
+    # (resource_label, {role_key: access_label})
+    ('Jobs',           {'superadmin': 'Full Control', 'admin': 'Run / Cancel / Restore', 'operator': 'Read Only'}),
+    ('Clients',        {'superadmin': 'Full Control', 'admin': 'Enable / Disable',       'operator': 'Read Only'}),
+    ('Storage',        {'superadmin': 'Full Control', 'admin': 'Read Only',               'operator': 'No Access'}),
+    ('Schedules',      {'superadmin': 'Full Control', 'admin': 'Read / Edit',             'operator': 'Read Only'}),
+    ('File Sets',      {'superadmin': 'Full Control', 'admin': 'Read Only',               'operator': 'Read Only'}),
+    ('Pools',          {'superadmin': 'Full Control', 'admin': 'Read Only',               'operator': 'No Access'}),
+    ('Volumes',        {'superadmin': 'Full Control', 'admin': 'Read Only',               'operator': 'No Access'}),
+    ('Reports',        {'superadmin': 'Full Control', 'admin': 'Full Access',             'operator': 'Read Only'}),
+    ('Administration', {'superadmin': 'Full Control', 'admin': 'Limited',                 'operator': 'No Access'}),
+]
+
+
+@login_required
+@require_http_methods(['GET'])
+def profile_view(request):
+    user = request.user
+    if user.is_superuser:
+        role_key   = 'superadmin'
+        role_label = 'Superadmin'
+    elif user.is_staff:
+        role_key   = 'admin'
+        role_label = 'Administrator'
+    else:
+        role_key   = 'operator'
+        role_label = 'Operator'
+
+    acls = [
+        {'resource': res, 'access': levels[role_key]}
+        for res, levels in _ACL_RESOURCES
+    ]
+    return render(request, 'common/profile_dialog.html', {
+        'profile_user': user,
+        'role_label':   role_label,
+        'role_key':     role_key,
+        'acls':         acls,
+    })
+
+
 # ── About dialog ──────────────────────────────────────────────────────────
 
 @login_required

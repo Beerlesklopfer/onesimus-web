@@ -7,4 +7,5 @@ urlpatterns = [
     path('settings/', views.settings_api, name='settings'),
     path('preferences/', views.preferences_api, name='preferences'),
     path('about/', views.about_view, name='about'),
+    path('profile/', views.profile_view, name='profile'),
 ]
