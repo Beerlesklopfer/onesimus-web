@@ -16,7 +16,7 @@
 # All production targets install into /srv/onesimus-web.
 
 .DEFAULT_GOAL := help
-.PHONY: help venv sysdeps install install-dev \
+.PHONY: help venv sysdeps sync install install-dev \
         install-system \
         migrate static superuser mockdata \
         dev run \
@@ -28,7 +28,7 @@
 DEPLOY_DIR  := /srv/onesimus-web
 PY          := $(DEPLOY_DIR)/.venv/bin/python
 PIP         := $(DEPLOY_DIR)/.venv/bin/pip
-MANAGE      := $(PY) manage.py
+MANAGE      := $(PY) $(DEPLOY_DIR)/manage.py
 SERVICE     := onesimus
 NGINX_NAME  := onesimus-web
 NGINX_AVAIL := /etc/nginx/sites-available/$(NGINX_NAME)
@@ -46,6 +46,17 @@ $(DEPLOY_DIR):                     # create update dir with correct ownership (i
 	sudo mkdir -p $(DEPLOY_DIR)
 	sudo chown www-data:www-data $(DEPLOY_DIR)
 
+sync: $(DEPLOY_DIR)               ## Sync source code to $(DEPLOY_DIR)
+	rsync -a --delete \
+		--exclude='.venv/' \
+		--exclude='.git/' \
+		--exclude='__pycache__/' \
+		--exclude='*.pyc' \
+		--exclude='staticfiles/' \
+		--exclude='.env' \
+		./ $(DEPLOY_DIR)/
+	@echo "  code synced → $(DEPLOY_DIR)"
+
 venv: $(DEPLOY_DIR)               ## Create virtualenv at $(DEPLOY_DIR)/.venv
 	@if [ ! -d "$(DEPLOY_DIR)/.venv" ]; then \
 		python3 -m venv $(DEPLOY_DIR)/.venv; \
@@ -55,7 +66,7 @@ venv: $(DEPLOY_DIR)               ## Create virtualenv at $(DEPLOY_DIR)/.venv
 		echo "  venv already exists."; \
 	fi
 
-install: venv                      ## Install prod deps (creates update dir + venv implicitly)
+install: sync venv                 ## Sync code + venv + install prod deps
 	$(PIP) install -q -r requirements-prod.txt
 
 install-dev:                       ## Install dev dependencies into local .venv
