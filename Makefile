@@ -158,8 +158,10 @@ run:                               ## Run daphne from $(DEPLOY_DIR) (no setup)
 # ── Deployment ────────────────────────────────────────────────────────────────
 
 update: install migrate static     ## Install deps + migrate + collectstatic + fix ownership + restart + nginx reload
-	@echo "  [chown] fixing ownership of $(DEPLOY_DIR) → www-data …"
+	@echo "  [chown] fixing ownership → www-data …"
 	sudo chown -R www-data:www-data $(DEPLOY_DIR)
+	sudo mkdir -p /var/log/onesimus
+	sudo chown -R www-data:www-data /var/log/onesimus
 	$(MAKE) restart
 	@sudo nginx -t && sudo systemctl reload nginx && echo "  nginx reloaded." || echo "  nginx config error — skipped reload."
 	@echo ""
