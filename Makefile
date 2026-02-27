@@ -3,8 +3,8 @@
 # First-time server setup (run as root or with sudo):
 #   git clone <repo> /root/onesimus-web && cd /root/onesimus-web
 #   sudo make sysdeps          (libpq-dev, python3-dev)
-#   sudo make install-system   (creates /srv/onesimus-web, /etc/onesimus/, systemd, nginx)
-#   make install migrate static superuser
+#   sudo make install          (install-system + venv + pip deps)
+#   make migrate static superuser
 #   sudo make start
 #
 # Re-deploy:     make deploy       (install + migrate + static + restart)
@@ -39,12 +39,7 @@ sysdeps:                           ## Install system build dependencies (require
 
 # ── Virtualenv ────────────────────────────────────────────────────────────────
 
-venv:                              ## Create virtualenv at $(DEPLOY_DIR)/.venv
-	@if [ ! -d "$(DEPLOY_DIR)" ]; then \
-		echo "  ERROR: $(DEPLOY_DIR) does not exist."; \
-		echo "  Run 'sudo make install-system' first."; \
-		exit 1; \
-	fi
+venv: install-system               ## Create virtualenv at $(DEPLOY_DIR)/.venv
 	@if [ ! -d "$(DEPLOY_DIR)/.venv" ]; then \
 		python3 -m venv $(DEPLOY_DIR)/.venv; \
 		$(PIP) install -q --upgrade pip setuptools wheel; \
@@ -53,7 +48,7 @@ venv:                              ## Create virtualenv at $(DEPLOY_DIR)/.venv
 		echo "  venv already exists."; \
 	fi
 
-install: venv                      ## Install production dependencies
+install: venv                      ## Full install: system setup + venv + pip deps
 	$(PIP) install -q -r requirements-prod.txt
 
 install-dev:                       ## Install dev dependencies into local .venv
