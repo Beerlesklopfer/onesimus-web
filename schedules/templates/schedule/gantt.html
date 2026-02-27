@@ -74,9 +74,50 @@
     border-right: 1px solid var(--color-border);
     background: var(--color-bg-secondary);
     display: flex; flex-direction: column;
-    overflow-y: auto; overflow-x: hidden;
+    overflow: hidden;
 }
+/* Sidebar panes — heights set by JS splitter */
+.gantt-sb-top    { overflow-y: auto; overflow-x: hidden; flex-shrink: 0; min-height: 40px; }
+.gantt-sb-bottom { overflow-y: auto; overflow-x: hidden; flex-shrink: 0; min-height: 40px; }
+
+/* Vertical splitter inside sidebar */
+.gantt-vsplitter {
+    flex-shrink: 0; height: 5px;
+    background: var(--color-border);
+    cursor: ns-resize;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none; transition: background 120ms;
+}
+.gantt-vsplitter:hover,
+.gantt-vsplitter.is-dragging { background: var(--color-statusbar-bg); }
+.gantt-vsplitter::after {
+    content: ''; width: 22px; height: 2px; border-radius: 1px;
+    background: var(--color-text-muted); opacity: 0.5;
+    pointer-events: none; transition: opacity 120ms;
+}
+.gantt-vsplitter:hover::after,
+.gantt-vsplitter.is-dragging::after { opacity: 1; }
+
+/* Horizontal splitter between sidebar and gantt area */
+.gantt-hsplitter {
+    flex-shrink: 0; width: 5px;
+    background: var(--color-border);
+    cursor: ew-resize;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none; transition: background 120ms;
+}
+.gantt-hsplitter:hover,
+.gantt-hsplitter.is-dragging { background: var(--color-statusbar-bg); }
+.gantt-hsplitter::after {
+    content: ''; width: 2px; height: 22px; border-radius: 1px;
+    background: var(--color-text-muted); opacity: 0.5;
+    pointer-events: none; transition: opacity 120ms;
+}
+.gantt-hsplitter:hover::after,
+.gantt-hsplitter.is-dragging::after { opacity: 1; }
+
 .gantt-sb-head {
+    position: sticky; top: 0; z-index: 1;
     padding: 4px 8px 3px;
     font-size: 10px; font-weight: var(--font-bold);
     text-transform: uppercase; letter-spacing: 0.06em;
@@ -103,7 +144,6 @@
 .dot-q { background: var(--color-text-disabled); }
 
 /* Jobs mini-table */
-.gantt-sb-divider { height: 1px; background: var(--color-border); margin: 3px 0; }
 .gantt-sb-table { width: 100%; border-collapse: collapse; font-size: 11px; }
 .gantt-sb-table th {
     padding: 2px 6px; font-weight: var(--font-semibold);
@@ -293,37 +333,50 @@
 
     <!-- Sidebar -->
     <div class="gantt-sidebar">
-      <div class="gantt-sb-head">Schedules</div>
-      <div class="gantt-sb-list">
-        {% for s in gantt_schedules %}
-        <label class="gantt-sb-item">
-          <input type="checkbox" class="gantt-sched-check" data-id="{{ s.id }}" checked>
-          <span class="gantt-sb-dot dot-{{ s.overall_status }}"></span>
-          <span class="gantt-sb-name" title="{{ s.name }}">{{ s.name }}</span>
-        </label>
-        {% empty %}
-        <div style="padding:8px;font-size:11px;color:var(--color-text-muted)">No schedules found.</div>
-        {% endfor %}
+
+      <!-- Top: Schedules (sticky, height set by JS) -->
+      <div class="gantt-sb-top" id="gantt-sb-top">
+        <div class="gantt-sb-head">Schedules</div>
+        <div class="gantt-sb-list">
+          {% for s in gantt_schedules %}
+          <label class="gantt-sb-item">
+            <input type="checkbox" class="gantt-sched-check" data-id="{{ s.id }}" checked>
+            <span class="gantt-sb-dot dot-{{ s.overall_status }}"></span>
+            <span class="gantt-sb-name" title="{{ s.name }}">{{ s.name }}</span>
+          </label>
+          {% empty %}
+          <div style="padding:8px;font-size:11px;color:var(--color-text-muted)">No schedules found.</div>
+          {% endfor %}
+        </div>
       </div>
 
-      <div class="gantt-sb-divider"></div>
-      <div class="gantt-sb-head">Jobs</div>
-      <table class="gantt-sb-table">
-        <thead>
-          <tr><th>Schedule</th><th>Client</th><th>Est.</th></tr>
-        </thead>
-        <tbody>
-          {% for s in gantt_schedules %}
-          <tr class="sched-row" data-id="{{ s.id }}"
-              title="{{ s.job_name }}&#10;{{ s.client_name }}">
-            <td>{{ s.name }}</td>
-            <td>{{ s.client_name }}</td>
-            <td>{{ s.est_dur }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <!-- Vertical splitter -->
+      <div class="gantt-vsplitter" id="gantt-vsplitter" title="Drag to resize"></div>
+
+      <!-- Bottom: Jobs (scrollable) -->
+      <div class="gantt-sb-bottom" id="gantt-sb-bottom">
+        <div class="gantt-sb-head">Jobs</div>
+        <table class="gantt-sb-table">
+          <thead>
+            <tr><th>Schedule</th><th>Client</th><th>Est.</th></tr>
+          </thead>
+          <tbody>
+            {% for s in gantt_schedules %}
+            <tr class="sched-row" data-id="{{ s.id }}"
+                title="{{ s.job_name }}&#10;{{ s.client_name }}">
+              <td>{{ s.name }}</td>
+              <td>{{ s.client_name }}</td>
+              <td>{{ s.est_dur }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
     </div><!-- /sidebar -->
+
+    <!-- Horizontal splitter -->
+    <div class="gantt-hsplitter" id="gantt-hsplitter" title="Drag to resize"></div>
 
     <!-- Gantt area -->
     <div class="gantt-area" id="gantt-area">
@@ -464,6 +517,78 @@
             ganttFetchJob(this.dataset.jobId, this.querySelector('.gantt-rl-name').textContent.trim());
         });
     });
+
+    /* ── Splitter helper ────────────────────────────────────── */
+    (function () {
+        function makeSplitter({ handle, primary, secondary, direction, storageKey, defaultRatio, minPx }) {
+            var prop    = direction === 'vertical'   ? 'height' : 'width';
+            var coord   = direction === 'vertical'   ? 'clientY' : 'clientX';
+            var getSize = function (el) { return direction === 'vertical' ? el.offsetHeight : el.offsetWidth; };
+
+            function applyRatio(ratio) {
+                var splitterSz = getSize(handle);
+                var container  = primary.parentElement;
+                var total = (direction === 'vertical' ? container.clientHeight : container.clientWidth) - splitterSz;
+                var primaryPx = Math.max(minPx, Math.min(total - minPx, Math.round(total * ratio)));
+                primary.style[prop] = primaryPx + 'px';
+                if (secondary) secondary.style[prop] = (total - primaryPx) + 'px';
+            }
+
+            var saved = parseFloat(localStorage.getItem(storageKey));
+            applyRatio(isNaN(saved) ? defaultRatio : saved);
+
+            handle.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                var startCoord  = e[coord];
+                var startPrimPx = getSize(primary);
+                var container   = primary.parentElement;
+                var total = (direction === 'vertical' ? container.clientHeight : container.clientWidth) - getSize(handle);
+
+                handle.classList.add('is-dragging');
+                document.body.style.cursor     = direction === 'vertical' ? 'ns-resize' : 'ew-resize';
+                document.body.style.userSelect = 'none';
+
+                function onMove(e) {
+                    var delta = e[coord] - startCoord;
+                    var newPx = Math.max(minPx, Math.min(total - minPx, startPrimPx + delta));
+                    primary.style[prop] = newPx + 'px';
+                    if (secondary) secondary.style[prop] = (total - newPx) + 'px';
+                }
+                function onUp() {
+                    localStorage.setItem(storageKey, getSize(primary) / total);
+                    handle.classList.remove('is-dragging');
+                    document.body.style.cursor     = '';
+                    document.body.style.userSelect = '';
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup',  onUp);
+                }
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup',   onUp);
+            });
+        }
+
+        /* Vertical: Schedules / Jobs */
+        makeSplitter({
+            handle:       document.getElementById('gantt-vsplitter'),
+            primary:      document.getElementById('gantt-sb-top'),
+            secondary:    document.getElementById('gantt-sb-bottom'),
+            direction:    'vertical',
+            storageKey:   'gantt-vsplit',
+            defaultRatio: 0.50,
+            minPx:        40,
+        });
+
+        /* Horizontal: Sidebar / Gantt area (sidebar width only; gantt-area stays flex:1) */
+        makeSplitter({
+            handle:       document.getElementById('gantt-hsplitter'),
+            primary:      document.querySelector('.gantt-sidebar'),
+            secondary:    null,
+            direction:    'horizontal',
+            storageKey:   'gantt-hsplit',
+            defaultRatio: 0.22,
+            minPx:        140,
+        });
+    })();
 
     {% if now_pct is not None %}
     /* ── Scroll current time into view on load ──────────────── */
