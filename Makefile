@@ -141,6 +141,7 @@ mockdata:                          ## Populate ALL mock data + fix ownership
 	$(MANAGE) populate_job_history --clear --days 120
 	$(MANAGE) populate_job_filesets --clear
 	$(MANAGE) populate_mock_schedules --clear
+	$(MANAGE) populate_mock_storage --clear
 	sudo chown -R www-data:www-data $(DEPLOY_DIR)
 	@echo "  mock data ready."
 
