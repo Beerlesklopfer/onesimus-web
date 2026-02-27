@@ -1,9 +1,10 @@
 # ── Onesimus Web — Makefile ───────────────────────────────────────────────────
 #
-# First-time server setup (run as root or with sudo):
+# First-time server setup:
 #   git clone <repo> /root/onesimus-web && cd /root/onesimus-web
-#   sudo make sysdeps          (libpq-dev, python3-dev)
-#   sudo make install          (install-system + venv + pip deps)
+#   sudo make sysdeps                (libpq-dev, python3-dev)
+#   sudo make install                (creates /srv/onesimus-web, venv, pip deps)
+#   sudo make install-system         (systemd unit + nginx config, once only)
 #   make migrate static superuser
 #   sudo make start
 #
@@ -22,6 +23,7 @@
         deploy \
         start stop restart status logs \
         lint test clean
+# $(DEPLOY_DIR) is a real file target — make creates it implicitly if missing
 
 DEPLOY_DIR  := /srv/onesimus-web
 PY          := $(DEPLOY_DIR)/.venv/bin/python
@@ -39,7 +41,11 @@ sysdeps:                           ## Install system build dependencies (require
 
 # ── Virtualenv ────────────────────────────────────────────────────────────────
 
-venv: install-system               ## Create virtualenv at $(DEPLOY_DIR)/.venv
+$(DEPLOY_DIR):                     # create deploy dir with correct ownership (implicit)
+	sudo mkdir -p $(DEPLOY_DIR)
+	sudo chown www-data:www-data $(DEPLOY_DIR)
+
+venv: $(DEPLOY_DIR)               ## Create virtualenv at $(DEPLOY_DIR)/.venv
 	@if [ ! -d "$(DEPLOY_DIR)/.venv" ]; then \
 		python3 -m venv $(DEPLOY_DIR)/.venv; \
 		$(PIP) install -q --upgrade pip setuptools wheel; \
@@ -48,7 +54,7 @@ venv: install-system               ## Create virtualenv at $(DEPLOY_DIR)/.venv
 		echo "  venv already exists."; \
 	fi
 
-install: venv                      ## Full install: system setup + venv + pip deps
+install: venv                      ## Install prod deps (creates deploy dir + venv implicitly)
 	$(PIP) install -q -r requirements-prod.txt
 
 install-dev:                       ## Install dev dependencies into local .venv
@@ -59,10 +65,7 @@ install-dev:                       ## Install dev dependencies into local .venv
 	fi
 	.venv/bin/pip install -q -r requirements-dev.txt
 
-install-system:                    ## Create /srv/onesimus-web, install systemd unit + nginx (requires sudo)
-	@echo "  [dir] creating $(DEPLOY_DIR) …"
-	sudo mkdir -p $(DEPLOY_DIR)
-	sudo chown www-data:www-data $(DEPLOY_DIR)
+install-system: $(DEPLOY_DIR)      ## Install systemd unit + nginx config (requires sudo)
 	@echo "  [env] creating /etc/onesimus/ …"
 	sudo mkdir -p /etc/onesimus
 	@if [ ! -f /etc/onesimus/onesimus.env ]; then \
