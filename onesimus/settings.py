@@ -164,17 +164,38 @@ STORAGES = {
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Logging
+# Logging  —  set DJANGO_LOG_LEVEL=DEBUG in onesimus.env to get full request/auth traces
+_LOG_LEVEL = os.environ.get('DJANGO_LOG_LEVEL', 'INFO').upper()
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
     'root': {
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': _LOG_LEVEL,
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': _LOG_LEVEL,
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console'],
+            'level': _LOG_LEVEL,
+            'propagate': False,
+        },
     },
 }

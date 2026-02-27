@@ -81,7 +81,7 @@ install-system: $(DEPLOY_DIR)      ## Install systemd unit + nginx config (requi
 	@echo "  [env] creating /etc/onesimus/ …"
 	sudo mkdir -p /etc/onesimus
 	@if [ ! -f /etc/onesimus/onesimus.env ]; then \
-		printf 'DJANGO_SECRET_KEY=change-me-to-a-random-50-char-string\nDJANGO_ALLOWED_HOSTS=localhost,127.0.0.1\nDJANGO_CSRF_TRUSTED_ORIGINS=https://your-domain.example.com\nDJANGO_DEBUG=false\nDATABASE_URL=sqlite:////srv/onesimus-web/db.sqlite3\n' \
+		printf 'DJANGO_SECRET_KEY=change-me-to-a-random-50-char-string\nDJANGO_ALLOWED_HOSTS=localhost,127.0.0.1\nDJANGO_CSRF_TRUSTED_ORIGINS=https://your-domain.example.com\nDJANGO_DEBUG=false\nDJANGO_LOG_LEVEL=INFO\nDATABASE_URL=sqlite:////srv/onesimus-web/db.sqlite3\n' \
 			| sudo tee /etc/onesimus/onesimus.env > /dev/null; \
 		echo "  [env] template written → /etc/onesimus/onesimus.env (edit before starting!)"; \
 	else \
@@ -123,12 +123,12 @@ migrate:                           ## Apply database migrations
 static:                            ## Collect static files
 	$(MANAGE) collectstatic --noinput --clear
 
-superuser:                         ## Create admin superuser (admin/admin) if missing
+superuser:                         ## Create superuser bareos/bareos if missing
 	@$(MANAGE) shell -c "\
 from django.contrib.auth.models import User; \
-User.objects.filter(username='admin').exists() \
-  or User.objects.create_superuser('admin','admin@example.local','admin')" \
-	&& echo "  superuser ready (admin / admin)"
+User.objects.filter(username='bareos').exists() \
+  or User.objects.create_superuser('bareos','bareos@localhost','bareos')" \
+	&& echo "  superuser ready (bareos / bareos)"
 
 mockdata:                          ## Populate mock data (jobs, schedules, filesets)
 	$(MANAGE) populate_mockups --clear
@@ -143,10 +143,10 @@ dev: install-dev                   ## Full dev setup + run daphne locally (DEBUG
 	.venv/bin/python manage.py migrate --noinput
 	@.venv/bin/python manage.py shell -c "\
 from django.contrib.auth.models import User; \
-User.objects.filter(username='admin').exists() \
-  or User.objects.create_superuser('admin','admin@example.local','admin')" \
-	&& echo "  superuser ready (admin / admin)"
-	DJANGO_DEBUG=true .venv/bin/daphne -b 0.0.0.0 -p 8888 onesimus.asgi:application
+User.objects.filter(username='bareos').exists() \
+  or User.objects.create_superuser('bareos','bareos@localhost','bareos')" \
+	&& echo "  superuser ready (bareos / bareos)"
+	DJANGO_DEBUG=true DJANGO_LOG_LEVEL=DEBUG .venv/bin/daphne -b 0.0.0.0 -p 8888 onesimus.asgi:application
 
 run:                               ## Run daphne from $(DEPLOY_DIR) (no setup)
 	$(DEPLOY_DIR)/.venv/bin/daphne -b 0.0.0.0 -p 8888 onesimus.asgi:application
