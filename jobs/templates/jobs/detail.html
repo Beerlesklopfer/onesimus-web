@@ -1,0 +1,532 @@
+<!-- Job Details Dialog — loaded into overlay-dialog-content via fetch() -->
+<div class="cd">
+
+    <!-- Tab bar -->
+    <div class="cd-tabs" role="tablist">
+        {% if mode == 'gantt' %}
+        <button class="cd-tab active" data-tab="jd-trend"  role="tab">Trend</button>
+        {% else %}
+        <button class="cd-tab active" data-tab="jd-files"  role="tab">Files</button>
+        {% endif %}
+        <button class="cd-tab"        data-tab="jd-status" role="tab">Status</button>
+        <button class="cd-tab"        data-tab="jd-logs"   role="tab">Logs</button>
+    </div>
+
+    {% if mode == 'gantt' %}
+    <!-- ── Tab: Trend ──────────────────────────────────────────── -->
+    <div id="jd-trend" class="cd-panel active">
+        <div class="jd-trend-header">
+            <span class="jd-trend-subtitle">Duration history — <strong>{{ job.name }}</strong></span>
+        </div>
+        <div id="jd-trend-chart" class="jd-trend-chart"></div>
+        <div class="jd-trend-legend">
+            <span class="jd-trend-dot jd-td-T"></span> Terminated (OK)
+            <span class="jd-trend-dot jd-td-W"></span> Warnings
+            <span class="jd-trend-dot jd-td-F"></span> Failed / Error
+        </div>
+    </div>
+    {% else %}
+    <!-- ── Tab: Files ──────────────────────────────────────────── -->
+    <div id="jd-files" class="cd-panel active">
+        <div class="jd-files-panes">
+
+            <!-- Left: directory tree -->
+            <div class="jd-tree-pane" id="jd-tree-pane">
+                <div class="jd-pane-header"><strong>Name</strong></div>
+                <div class="jd-tree-body" id="jd-tree"></div>
+            </div>
+
+            <!-- Drag handle -->
+            <div class="jd-resizer" id="jd-resizer" title="Drag to resize"></div>
+
+            <!-- Right: file listing -->
+            <div class="jd-list-pane">
+                <div class="jd-list-header">
+                    <table class="jd-list-table">
+                        <thead>
+                            <tr>
+                                <th>Name <span class="jd-sort-arrow">▲</span></th>
+                                <th class="jd-th-r">Size</th>
+                                <th>Type</th>
+                                <th>Modified</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div class="jd-list-scroll">
+                    <table class="jd-list-table">
+                        <tbody id="jd-list-body">
+                            <tr><td colspan="4" class="jd-empty">Select a directory</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Tab: Status ─────────────────────────────────────────── -->
+    <div id="jd-status" class="cd-panel">
+
+        <div class="cd-section">
+            <div class="cd-section-title">Job Information</div>
+            <div class="cd-section-body">
+                <table class="cd-info-table">
+                    <tr><th>Job ID:</th>   <td class="text-mono">{{ job.bareos_id }}</td></tr>
+                    <tr><th>Job Name:</th> <td>{{ job.name }}</td></tr>
+                    <tr><th>Client:</th>   <td>{{ job.client.name|default:"—" }}</td></tr>
+                    <tr><th>Type:</th>     <td>{{ job.job_type }}</td></tr>
+                    <tr><th>Level:</th>    <td>{{ job.get_level_display }}</td></tr>
+                    <tr><th>FileSet:</th>  <td>{{ job.filesets|default:"—" }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="cd-section">
+            <div class="cd-section-title">Timing</div>
+            <div class="cd-section-body">
+                <table class="cd-info-table">
+                    <tr><th>Start Time:</th> <td class="text-mono">{{ job.actual_time|date:"d.m.Y H:i:s"|default:"—" }}</td></tr>
+                    <tr><th>Duration:</th>   <td class="text-mono">{{ job.duration_str }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="cd-section">
+            <div class="cd-section-title">Statistics</div>
+            <div class="cd-section-body">
+                <table class="cd-info-table">
+                    <tr><th>Files Backed Up:</th> <td>{{ job.files }}</td></tr>
+                    <tr><th>Data Size:</th>        <td>{{ job.bytes|filesizeformat }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="cd-section">
+            <div class="cd-section-title">Status</div>
+            <div class="cd-section-body">
+                <table class="cd-info-table">
+                    <tr>
+                        <th>Job Status:</th>
+                        <td>
+                            <span class="jd-status-badge jd-status-{{ job.status }}">{{ job.get_status_display }}{% if job.status == 'W' %} &#x26A0;{% elif job.status == 'F' or job.status == 'E' or job.status == 'A' %} &#x2715;{% endif %}</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Tab: Logs ─────────────────────────────────────────── -->
+    <div id="jd-logs" class="cd-panel">
+        <div class="jd-log-scroll">{% for log in logs %}[{{ log.timestamp|date:"Y-m-d H:i:s" }}] {{ log.message }}
+{% empty %}(no log messages){% endfor %}</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="cd-footer">
+        <button class="btn btn-primary btn-sm" onclick="overlayDialog.close()">OK</button>
+    </div>
+
+</div><!-- /.cd -->
+
+{% if mode == 'gantt' %}
+{{ trend_data|json_script:"jd-trend-data" }}
+{% else %}
+{{ job_files|json_script:"jd-files-data" }}
+{% endif %}
+
+<style>
+/* ── Shared dialog structure (cd-*) ────────────────────────── */
+.cd { display: flex; flex-direction: column; height: 100%; }
+.cd-tabs { display: flex; border-bottom: 1px solid var(--color-border); background: var(--color-bg-secondary); flex-shrink: 0; padding: 0 12px; }
+.cd-tab { all: unset; padding: 8px 18px 7px; font-size: var(--text-sm); cursor: pointer; color: var(--color-text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.cd-tab:hover { color: var(--color-text); background: var(--color-bg-hover); }
+.cd-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: var(--font-semibold); background: var(--color-bg); }
+.cd-panel { display: none; flex: 1; overflow-y: auto; padding: 14px 16px 0; }
+.cd-panel.active { display: flex; flex-direction: column; }
+.cd-section { margin-bottom: 14px; }
+.cd-section-title { font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--color-primary); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.cd-section-title::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
+.cd-section-body { border: 1px solid var(--color-border); border-radius: 4px; padding: 8px 14px; background: var(--color-bg); }
+.cd-info-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.cd-info-table th { text-align: left; color: var(--color-text); font-weight: var(--font-normal); padding: 2px 16px 2px 0; white-space: nowrap; width: 150px; }
+.cd-info-table td { padding: 2px 0; }
+.cd-footer { flex-shrink: 0; display: flex; justify-content: flex-end; padding: 10px 0 12px; border-top: 1px solid var(--color-border); margin-top: 4px; }
+
+/* ── Trend tab ──────────────────────────────────────────────── */
+#jd-trend.active { overflow-y: auto; }
+.jd-trend-header { flex-shrink: 0; margin-bottom: 6px; }
+.jd-trend-subtitle { font-size: var(--text-sm); color: var(--color-text-muted); }
+.jd-trend-chart { width: 100%; overflow-x: auto; }
+.jd-trend-chart svg { display: block; width: max(100%, 420px); height: auto; }
+.jd-trend-legend { flex-shrink: 0; display: flex; align-items: center; gap: 14px; font-size: 11px; color: var(--color-text-muted); padding: 8px 0 2px; }
+.jd-trend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
+.jd-td-T { background: var(--color-status-success); }
+.jd-td-W { background: var(--color-status-warning); }
+.jd-td-F { background: var(--color-status-error); }
+
+/* ── Files tab ─────────────────────────────────────────────── */
+#jd-files.active { overflow: hidden; padding-bottom: 4px; }
+.jd-files-panes { display: flex; flex: 1; min-height: 0; border: 1px solid var(--color-border); border-radius: 4px; overflow: hidden; }
+
+.jd-tree-pane { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; }
+.jd-resizer { width: 4px; flex-shrink: 0; background: var(--color-border); cursor: col-resize; transition: background 0.15s; }
+.jd-resizer:hover, .jd-resizer.jd-resizing { background: var(--color-primary); }
+.jd-pane-header { background: var(--color-bg-secondary); padding: 5px 10px; font-size: var(--text-sm); font-weight: var(--font-semibold); border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
+.jd-tree-body { flex: 1; overflow-y: auto; padding: 4px 0; }
+
+.jd-list-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.jd-list-header { flex-shrink: 0; }
+.jd-list-scroll { flex: 1; overflow: auto; }
+.jd-list-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); min-width: 380px; }
+.jd-list-table thead th { background: var(--color-bg-secondary); padding: 5px 10px; text-align: left; font-weight: var(--font-semibold); border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+.jd-list-table tbody td { padding: 3px 10px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.jd-list-table tbody tr:hover { background: var(--color-bg-hover); }
+.jd-th-r { text-align: right !important; width: 90px; }
+.jd-sort-arrow { font-size: 9px; color: var(--color-text-muted); }
+
+/* Tree nodes */
+.jd-tree-node { font-size: var(--text-sm); user-select: none; white-space: nowrap; }
+.jd-tree-node-inner { display: flex; align-items: center; gap: 3px; padding: 2px 4px; border-radius: 2px; cursor: pointer; }
+.jd-tree-node-inner:hover { background: var(--color-bg-hover); }
+.jd-tree-node-inner.selected { background: var(--color-primary); color: #fff; }
+.jd-tree-toggle { width: 14px; text-align: center; font-size: 9px; color: var(--color-text-muted); flex-shrink: 0; }
+.jd-tree-node-inner.selected .jd-tree-toggle { color: rgba(255,255,255,0.7); }
+.jd-tree-icon { font-size: 13px; flex-shrink: 0; line-height: 1; }
+.jd-tree-label { overflow: hidden; text-overflow: ellipsis; }
+.jd-tree-children { display: none; }
+.jd-tree-children.open { display: block; }
+
+/* ── Status tab ─────────────────────────────────────────────── */
+.jd-status-badge { display: block; padding: 4px 10px; border-radius: 3px; font-weight: var(--font-semibold); font-size: var(--text-sm); }
+.jd-status-T { background: rgba(76,175,80,0.12); color: #1b5e20; }
+.jd-status-W { background: rgba(255,235,59,0.40); color: #5d4000; }
+.jd-status-F, .jd-status-E, .jd-status-A { background: rgba(244,67,54,0.12); color: #b71c1c; }
+.jd-status-R { background: rgba(33,150,243,0.15); color: #0d47a1; }
+.jd-status-I, .jd-status-q, .jd-status-S, .jd-status-D, .jd-status-P { background: rgba(150,150,150,0.12); color: var(--color-text-muted); }
+
+/* ── Logs tab ───────────────────────────────────────────────── */
+#jd-logs.active { overflow: hidden; padding-bottom: 4px; }
+.jd-log-scroll {
+    flex: 1;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.45;
+    white-space: pre;
+    padding: 8px 10px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text);
+}
+
+.jd-empty { color: var(--color-text-muted); padding: 12px; font-size: var(--text-sm); text-align: center; }
+</style>
+
+<script>
+// Tab switching
+(function () {
+    document.querySelectorAll('.cd-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.cd-tab').forEach(function (t) { t.classList.remove('active'); });
+            document.querySelectorAll('.cd-panel').forEach(function (p) { p.classList.remove('active'); });
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+    });
+}());
+
+{% if mode == 'gantt' %}
+// ── Trend chart ─────────────────────────────────────────────
+(function () {
+    var dataEl = document.getElementById('jd-trend-data');
+    var data   = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+    var chartEl = document.getElementById('jd-trend-chart');
+    if (!chartEl) return;
+
+    if (!data.length) {
+        chartEl.innerHTML = '<div class="jd-empty">No historical run data available.</div>';
+        return;
+    }
+
+    chartEl.innerHTML = buildSvg(data);
+
+    function buildSvg(data) {
+        // Fixed viewBox — SVG scales with container width via CSS (height: auto)
+        var VW = 560, VH = 240;
+        var PL = 48, PR = 16, PT = 16, PB = 38;
+        var CW = VW - PL - PR;
+        var CH = VH - PT - PB;
+        var n  = data.length;
+
+        var maxRaw = 0;
+        for (var i = 0; i < n; i++) { if (data[i].dur_min > maxRaw) maxRaw = data[i].dur_min; }
+        if (maxRaw <= 0) maxRaw = 60;
+        var maxDur = niceMax(maxRaw);
+
+        var step   = CW / n;
+        var barW   = Math.max(3, step * 0.72);
+        var barOff = (step - barW) / 2;
+
+        // Y grid + labels (5 ticks: 0…max)
+        var grid = '';
+        for (var t = 0; t <= 4; t++) {
+            var v  = Math.round(maxDur * t / 4);
+            var ty = PT + CH - Math.round(v / maxDur * CH);
+            grid += '<line x1="' + PL + '" x2="' + (PL + CW) + '" y1="' + ty + '" y2="' + ty
+                  + '" stroke="var(--color-border)" stroke-width="1" opacity="0.6"/>'
+                  + '<text x="' + (PL - 5) + '" y="' + (ty + 4) + '" text-anchor="end"'
+                  + ' font-size="10" fill="var(--color-text-muted)">' + v + 'm</text>';
+        }
+
+        // Bars + x labels
+        var every = Math.max(1, Math.floor(n / 8));
+        var bars  = '';
+        for (var i = 0; i < n; i++) {
+            var d  = data[i];
+            var bh = Math.max(2, Math.round(d.dur_min / maxDur * CH));
+            var bx = PL + i * step + barOff;
+            var by = PT + CH - bh;
+            bars += '<rect x="' + bx.toFixed(1) + '" y="' + by
+                  + '" width="' + barW.toFixed(1) + '" height="' + bh
+                  + '" fill="' + statusColor(d.status) + '" rx="1.5">'
+                  + '<title>' + esc(d.date) + ': ' + d.dur_min + ' min (' + d.status + ')</title>'
+                  + '</rect>';
+            if (i % every === 0 || i === n - 1) {
+                bars += '<text x="' + (bx + barW / 2).toFixed(1) + '" y="' + (PT + CH + 16)
+                      + '" text-anchor="middle" font-size="9" fill="var(--color-text-muted)">'
+                      + esc(d.date) + '</text>';
+            }
+        }
+
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + VW + ' ' + VH + '">'
+             + grid + bars + '</svg>';
+    }
+
+    function niceMax(v) {
+        if (v <= 0) return 60;
+        var exp = Math.pow(10, Math.floor(Math.log10(v)));
+        var n   = Math.ceil(v / exp) * exp;
+        return n === v ? n + exp : n;
+    }
+    function statusColor(s) {
+        return ({T: 'var(--color-status-success)',
+                 W: 'var(--color-status-warning)',
+                 F: 'var(--color-status-error)',
+                 E: 'var(--color-status-error)',
+                 A: 'var(--color-status-error)'})[s] || 'var(--color-text-muted)';
+    }
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+}());
+
+{% else %}
+// ── File tree ────────────────────────────────────────────────
+(function () {
+    var dataEl = document.getElementById('jd-files-data');
+    var FILES  = dataEl ? JSON.parse(dataEl.textContent) : [];
+    var treeEl  = document.getElementById('jd-tree');
+    var listBody = document.getElementById('jd-list-body');
+
+    if (!FILES.length) {
+        treeEl.innerHTML = '<div class="jd-empty">No file data available</div>';
+        return;
+    }
+
+    // Collect all unique directory paths (including ancestors)
+    var allPaths = new Set();
+    FILES.forEach(function (f) {
+        var p = f.path;
+        if (!p.endsWith('/')) p += '/';
+        allPaths.add(p);
+        var parts = p.split('/').filter(Boolean);
+        for (var i = 1; i <= parts.length; i++) {
+            allPaths.add('/' + parts.slice(0, i).join('/') + '/');
+        }
+    });
+
+    // Build parent → children map
+    var childMap = {};
+    allPaths.forEach(function (p) { childMap[p] = []; });
+    allPaths.forEach(function (p) {
+        var par = parentOf(p);
+        if (par !== null && allPaths.has(par)) {
+            childMap[par].push(p);
+        }
+    });
+
+    function parentOf(path) {
+        if (path === '/') return null;
+        var s = path.slice(0, -1);
+        var i = s.lastIndexOf('/');
+        return s.slice(0, i + 1) || '/';
+    }
+    function labelOf(path) {
+        var s = path.slice(0, -1);
+        return s.split('/').pop() || path;
+    }
+
+    // Root = paths whose parent is not in allPaths
+    var roots = Array.from(allPaths).filter(function (p) {
+        var par = parentOf(p);
+        return par === null || !allPaths.has(par);
+    }).sort();
+
+    roots.forEach(function (r) { treeEl.appendChild(buildNode(r, 0)); });
+
+    // Auto-select first root
+    var firstNode = treeEl.querySelector('.jd-tree-node');
+    if (firstNode) {
+        expandNode(firstNode);
+        var inner = firstNode.querySelector('.jd-tree-node-inner');
+        if (inner) selectNode(inner, firstNode.dataset.path);
+    }
+
+    function buildNode(path, depth) {
+        var kids = (childMap[path] || []).slice().sort();
+        var hasKids = kids.length > 0;
+
+        var node = document.createElement('div');
+        node.className = 'jd-tree-node';
+        node.dataset.path = path;
+
+        var inner = document.createElement('div');
+        inner.className = 'jd-tree-node-inner';
+        inner.style.paddingLeft = (4 + depth * 16) + 'px';
+
+        var toggle = document.createElement('span');
+        toggle.className = 'jd-tree-toggle';
+        toggle.textContent = hasKids ? '▶' : ' ';
+
+        var icon = document.createElement('span');
+        icon.className = 'jd-tree-icon';
+        icon.textContent = '📁';
+
+        var lbl = document.createElement('span');
+        lbl.className = 'jd-tree-label';
+        lbl.textContent = labelOf(path);
+
+        inner.appendChild(toggle); inner.appendChild(icon); inner.appendChild(lbl);
+
+        var childrenEl = document.createElement('div');
+        childrenEl.className = 'jd-tree-children';
+        kids.forEach(function (k) { childrenEl.appendChild(buildNode(k, depth + 1)); });
+
+        inner.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (hasKids) {
+                if (childrenEl.classList.contains('open')) {
+                    childrenEl.classList.remove('open');
+                    toggle.textContent = '▶';
+                    icon.textContent = '📁';
+                } else {
+                    expandNode(node);
+                }
+            }
+            selectNode(inner, path);
+        });
+
+        node.appendChild(inner);
+        node.appendChild(childrenEl);
+        return node;
+    }
+
+    function expandNode(node) {
+        var ch  = node.querySelector(':scope > .jd-tree-children');
+        var tog = node.querySelector(':scope > .jd-tree-node-inner > .jd-tree-toggle');
+        var ic  = node.querySelector(':scope > .jd-tree-node-inner > .jd-tree-icon');
+        if (ch)  ch.classList.add('open');
+        if (tog && tog.textContent.trim()) tog.textContent = '▼';
+        if (ic)  ic.textContent = '📂';
+    }
+
+    function selectNode(inner, path) {
+        document.querySelectorAll('.jd-tree-node-inner.selected').forEach(function (el) {
+            el.classList.remove('selected');
+        });
+        inner.classList.add('selected');
+        showDir(path);
+    }
+
+    function showDir(dirPath) {
+        var norm = dirPath.endsWith('/') ? dirPath : dirPath + '/';
+        var entries = FILES.filter(function (f) {
+            var p = f.path; if (!p.endsWith('/')) p += '/';
+            return p === norm;
+        });
+        if (!entries.length) {
+            listBody.innerHTML = '<tr><td colspan="4" class="jd-empty">Empty directory</td></tr>';
+            return;
+        }
+        entries.sort(function (a, b) {
+            if (a.is_dir !== b.is_dir) return a.is_dir ? -1 : 1;
+            return a.name.localeCompare(b.name);
+        });
+        listBody.innerHTML = entries.map(function (f) {
+            var icon  = f.is_dir ? '📁' : '📄';
+            var size  = f.is_dir ? '—' : fmtBytes(f.size);
+            var type  = f.is_dir ? 'Directory' : 'File';
+            var mtime = f.mod_time || '—';
+            return '<tr>'
+                + '<td>' + icon + ' ' + esc(f.name) + '</td>'
+                + '<td class="text-mono text-sm" style="text-align:right">' + size + '</td>'
+                + '<td class="text-sm">' + type + '</td>'
+                + '<td class="text-mono text-sm">' + esc(mtime) + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    // Restore saved split width
+    var _savedW = parseInt(localStorage.getItem('jd.split.width'), 10);
+    if (_savedW >= 80 && _savedW <= 600) {
+        document.getElementById('jd-tree-pane').style.width = _savedW + 'px';
+    }
+
+    function fmtBytes(b) {
+        if (!b) return '0 B';
+        var u = ['B','KB','MB','GB','TB'], i = 0, v = b;
+        while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+        return v.toFixed(i ? 2 : 0) + ' ' + u[i];
+    }
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+}());
+
+// ── Resizable splitter ──────────────────────────────────────
+(function () {
+    var resizer  = document.getElementById('jd-resizer');
+    var treePane = document.getElementById('jd-tree-pane');
+    if (!resizer || !treePane) return;
+
+    resizer.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        var startX = e.clientX;
+        var startW = treePane.getBoundingClientRect().width;
+        resizer.classList.add('jd-resizing');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        function onMove(e) {
+            var newW = Math.max(80, Math.min(600, startW + e.clientX - startX));
+            treePane.style.width = newW + 'px';
+        }
+        function onUp() {
+            resizer.classList.remove('jd-resizing');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            localStorage.setItem('jd.split.width', Math.round(treePane.getBoundingClientRect().width));
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup',   onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onUp);
+    });
+}());
+{% endif %}
+</script>

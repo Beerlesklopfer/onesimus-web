@@ -1,0 +1,57 @@
+# Onesimus Web Application - Requirements
+# Python 3.13+ required
+
+# Core Framework
+Django==6.0.2
+whitenoise==6.9.0
+sqlparse==0.5.5
+asgiref==3.11.1
+
+# WebSocket & Async Support
+channels==4.3.2
+daphne==4.2.1
+Twisted==25.5.0
+txaio==25.12.2
+autobahn==25.12.2
+pyOpenSSL==25.3.0
+service-identity==24.2.0
+Automat==25.4.16
+
+# Frontend & HTMX
+django-htmx==1.27.0
+
+# Bareos Backend Integration
+python-bareos==25.0.2
+cbor2==5.8.0
+py-ubjson==0.16.1
+msgpack==1.1.2
+
+# Environment & Configuration
+python-dotenv==1.2.1
+
+# Cryptography & SSL
+cryptography==46.0.5
+cffi==2.0.0
+pycparser==3.0
+pyasn1==0.6.2
+pyasn1_modules==0.4.2
+pyOpenSSL==25.3.0
+
+# Utilities
+attrs==25.4.0
+constantly==23.10.4
+hyperlink==21.0.0
+Incremental==24.11.0
+idna==3.11
+packaging==26.0
+ujson==5.11.0
+zope.interface==8.2
+typing_extensions==4.15.0
+
+# Development Tools (Optional)
+# Uncomment below for development:
+# black==24.0.0           # Code formatter
+# ruff==0.1.0             # Linter
+# mypy==1.0.0             # Type checker
+# pytest==7.0.0           # Testing
+# pytest-django==4.5.2    # Django testing

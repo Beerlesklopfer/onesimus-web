@@ -1,0 +1,85 @@
+<div class="layout-toolbar">
+    <div class="toolbar">
+
+        <!-- Section: Connection -->
+        <div class="toolbar-section" id="ts-connection">
+            <button class="toolbar-btn" id="tb-connect" title="Connect to Bareos Director">
+                <svg class="icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span class="toolbar-label">Connect</span>
+            </button>
+            <button class="toolbar-btn" id="tb-disconnect" title="Disconnect" disabled>
+                <svg class="icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                <span class="toolbar-label">Disconnect</span>
+            </button>
+        </div>
+
+        <!-- Section: Actions -->
+        <div class="toolbar-section" id="ts-actions">
+            <div class="toolbar-sep"></div>
+            <button class="toolbar-btn" title="Refresh current view" onclick="location.reload()">
+                <svg class="icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                <span class="toolbar-label">Refresh</span>
+            </button>
+        </div>
+
+        <!-- Section: View (injected by sub-pages via HTMX or block) -->
+        <div class="toolbar-section" id="ts-view">
+        </div>
+
+        <!-- Spacer pushes toggles to the right -->
+        <div class="toolbar-spacer"></div>
+
+        <!-- Section toggle controls -->
+        <div class="toolbar-section-toggles">
+            <button class="toolbar-toggle-btn" data-target="ts-connection" title="Toggle Connection section">Conn.</button>
+            <button class="toolbar-toggle-btn" data-target="ts-actions" title="Toggle Actions section">Actions</button>
+            <button class="toolbar-toggle-btn" data-target="ts-view" title="Toggle View section">View</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const STORAGE_KEY = 'toolbar-sections';
+
+    function loadState() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+        catch (e) { return {}; }
+    }
+
+    function saveState(state) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    const state = loadState();
+    const toggleBtns = document.querySelectorAll('.toolbar-toggle-btn');
+
+    toggleBtns.forEach(function (btn) {
+        const target = document.getElementById(btn.dataset.target);
+        if (!target) return;
+
+        // Restore saved visibility
+        if (state[btn.dataset.target] === false) {
+            target.style.display = 'none';
+            btn.classList.remove('active');
+        } else {
+            btn.classList.add('active');
+        }
+
+        btn.addEventListener('click', function () {
+            const hidden = target.style.display === 'none';
+            target.style.display = hidden ? '' : 'none';
+            btn.classList.toggle('active', hidden);
+            state[btn.dataset.target] = hidden;
+            saveState(state);
+        });
+    });
+})();
+</script>

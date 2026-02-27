@@ -1,0 +1,229 @@
+/* ============================================================
+   Color Variables (exact match to Qt Onesimus QSS themes)
+   ============================================================ */
+
+/* Dark theme — matches dark.qss */
+:root,
+:root[data-theme="dark"] {
+    /* Primary / accent — VSCode blue */
+    --color-primary:       #007acc;
+    --color-primary-hover: #1177bb;
+    --color-primary-dark:  #094771;
+    --color-primary-light: #1f92b8;
+
+    /* Button — mirrors QPushButton dark.qss */
+    --color-btn-bg:        #0e639c;
+    --color-btn-border:    #007acc;
+    --color-btn-hover:     #1177bb;
+    --color-btn-pressed:   #094771;
+
+    /* Backgrounds */
+    --color-bg:            #1e1e1e;   /* QWidget */
+    --color-bg-secondary:  #252526;   /* alternate-background-color */
+    --color-bg-tertiary:   #2d2d30;   /* QHeaderView, QTabBar, QDockWidget */
+    --color-bg-input:      #3c3c3c;   /* QLineEdit, QComboBox, QSpinBox */
+    --color-bg-hover:      #37373d;   /* :hover states */
+    --color-bg-toolbar:    #252526;   /* QToolBar, QMenuBar */
+
+    /* Text */
+    --color-text:          #d4d4d4;
+    --color-text-muted:    #969696;
+    --color-text-inverse:  #ffffff;
+    --color-text-disabled: #666666;
+
+    /* Borders */
+    --color-border:        #3e3e42;
+    --color-border-light:  #4e4e4e;
+    --color-divider:       #3e3e42;
+
+    /* Selection / hover */
+    --color-selection:     #094771;
+    --color-hover:         #37373d;
+
+    /* Status colors — match Qt semantic labels */
+    --color-status-success:  #6af06a;
+    --color-status-error:    #f06a6a;
+    --color-status-warning:  #ffd06a;
+    --color-status-info:     #aa6af0;
+    --color-status-pending:  #6a8af0;
+    --color-status-running:  #6ad4f0;
+    --color-status-canceled: #8b8b8b;
+
+    /* Level colors (Bareos backup levels) */
+    --color-level-full:         #2a5a2a;
+    --color-level-incremental:  #2a3a5a;
+    --color-level-differential: #5a3a2a;
+    --color-level-vfull:        #3a2a5a;
+
+    /* Connection indicator */
+    --color-online:   #6af06a;   /* connected="true" */
+    --color-offline:  #aaaaaa;   /* connected="false" */
+    --color-disabled: #5a5a5a;
+
+    /* Semantic aliases */
+    --color-danger:  #f06a6a;
+    --color-success: #6af06a;
+    --color-warning: #ffd06a;
+    --color-info:    #aa6af0;
+
+    /* Status bar — QStatusBar dark */
+    --color-statusbar-bg:   #007acc;
+    --color-statusbar-text: #ffffff;
+}
+
+/* Light theme — matches light.qss */
+:root[data-theme="light"] {
+    /* Primary / accent — Microsoft blue */
+    --color-primary:       #0078d4;
+    --color-primary-hover: #006cbe;
+    --color-primary-dark:  #005a9e;
+    --color-primary-light: #50a4e0;
+
+    /* Button */
+    --color-btn-bg:        #0078d4;
+    --color-btn-border:    #005a9e;
+    --color-btn-hover:     #006cbe;
+    --color-btn-pressed:   #005a9e;
+
+    /* Backgrounds */
+    --color-bg:            #ffffff;
+    --color-bg-secondary:  #f0f0f0;
+    --color-bg-tertiary:   #e0e0e0;
+    --color-bg-input:      #ffffff;
+    --color-bg-hover:      #f0f0f0;
+    --color-bg-toolbar:    #f0f0f0;
+
+    /* Text */
+    --color-text:          #000000;
+    --color-text-muted:    #666666;
+    --color-text-inverse:  #ffffff;
+    --color-text-disabled: #a0a0a0;
+
+    /* Borders */
+    --color-border:        #d0d0d0;
+    --color-border-light:  #e0e0e0;
+    --color-divider:       #d0d0d0;
+
+    /* Selection / hover */
+    --color-selection:     #0078d4;
+    --color-hover:         #f0f0f0;
+
+    /* Status colors */
+    --color-status-success:  #107c10;
+    --color-status-error:    #d13438;
+    --color-status-warning:  #ffb900;
+    --color-status-info:     #0078d4;
+    --color-status-pending:  #004b50;
+    --color-status-running:  #0078d4;
+    --color-status-canceled: #999999;
+
+    /* Level colors */
+    --color-level-full:         #d4f0d4;
+    --color-level-incremental:  #d4e4f0;
+    --color-level-differential: #f0e4d4;
+    --color-level-vfull:        #e4d4f0;
+
+    /* Connection indicator */
+    --color-online:   #107c10;
+    --color-offline:  #999999;
+    --color-disabled: #c0c0c0;
+
+    /* Semantic aliases */
+    --color-danger:  #d13438;
+    --color-success: #107c10;
+    --color-warning: #ffb900;
+    --color-info:    #0078d4;
+
+    /* Status bar — QStatusBar light */
+    --color-statusbar-bg:   #0078d4;
+    --color-statusbar-text: #ffffff;
+}
+
+/* ============================================================
+   Spacing Scale (8px base unit)
+   ============================================================ */
+
+:root {
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+    --space-3xl: 64px;
+
+    --space-gutter:       var(--space-lg);
+    --space-card-padding: var(--space-md);
+    --space-input-padding: 5px;
+}
+
+/* ============================================================
+   Typography — "Segoe UI", Ubuntu (matches QSS font-family)
+   ============================================================ */
+
+:root {
+    --font-base: "Segoe UI", Ubuntu, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    --font-mono: 'Monaco', 'Courier New', monospace;
+
+    --text-xs:   11px;
+    --text-sm:   12px;
+    --text-base: 13px;   /* matches Qt 10pt ≈ 13px */
+    --text-lg:   15px;
+    --text-xl:   17px;
+    --text-2xl:  19px;
+    --text-3xl:  22px;
+    --text-4xl:  26px;
+    --text-5xl:  32px;
+
+    --line-tight:   1.2;
+    --line-normal:  1.5;
+    --line-relaxed: 1.75;
+
+    --font-light:    300;
+    --font-normal:   400;
+    --font-semibold: 600;
+    --font-bold:     700;
+
+    --z-dropdown:     1000;
+    --z-modal:        1050;
+    --z-tooltip:      1100;
+    --z-notification: 1200;
+}
+
+/* ============================================================
+   Borders — Qt uses border-radius: 3px throughout
+   ============================================================ */
+
+:root {
+    --border-radius-sm: 2px;
+    --border-radius-md: 3px;   /* matches Qt border-radius: 3px */
+    --border-radius-lg: 5px;   /* matches Qt QGroupBox border-radius: 5px */
+    --border-radius-xl: 8px;
+    --border-radius-2xl: 12px;
+    --border-radius-full: 9999px;
+
+    --border-width:   1px;
+    --border-width-2: 2px;
+}
+
+/* ============================================================
+   Shadows
+   ============================================================ */
+
+:root {
+    --shadow-sm:  0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    --shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.35);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================================
+   Transitions
+   ============================================================ */
+
+:root {
+    --transition-fast: 150ms ease-in-out;
+    --transition-base: 200ms ease-in-out;
+    --transition-slow: 300ms ease-in-out;
+}

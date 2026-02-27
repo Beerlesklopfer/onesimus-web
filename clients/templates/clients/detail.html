@@ -1,0 +1,394 @@
+<!-- Client Details Dialog — loaded into overlay-dialog-content via fetch() -->
+<div class="cd">
+
+    <!-- Tab bar -->
+    <div class="cd-tabs" role="tablist">
+        <button class="cd-tab active" data-tab="cd-info"       role="tab">Information</button>
+        <button class="cd-tab"        data-tab="cd-settings"   role="tab">Settings</button>
+        <button class="cd-tab"        data-tab="cd-jobs"       role="tab">Jobs</button>
+        <button class="cd-tab"        data-tab="cd-statistics" role="tab">Statistics</button>
+    </div>
+
+    <!-- ── Tab: Information ─────────────────────────────────── -->
+    <div id="cd-info" class="cd-panel active">
+
+        <div class="cd-section">
+            <div class="cd-section-title">General Information</div>
+            <div class="cd-section-body">
+                <table class="cd-info-table">
+                    <tr><th>Name:</th>             <td>{{ client.name }}</td></tr>
+                    <tr><th>Address:</th>           <td class="text-mono">{{ client.address|default:"—" }}</td></tr>
+                    <tr><th>Port:</th>              <td class="text-mono">{{ client.port }}</td></tr>
+                    <tr><th>Version:</th>           <td>{{ client.version|default:"—" }}</td></tr>
+                    <tr><th>Operating System:</th>  <td>{{ client.os_name|default:"—" }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="cd-section">
+            <div class="cd-section-title">Connection Information</div>
+            <div class="cd-section-body">
+                <table class="cd-info-table">
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            <span class="cd-status-text cd-status-{{ client.status }}">
+                                {{ client.get_status_display }}{% if client.status != 'online' and days_offline is not None %} (since {{ days_offline }} day{{ days_offline|pluralize }}){% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Last Connection:</th>
+                        <td class="text-mono">{% if client.last_backup %}{{ client.last_backup|date:"d.m.Y H:i" }}{% else %}Never{% endif %}</td>
+                    </tr>
+                    <tr><th>Enabled:</th>   <td>{{ client.enabled|yesno:"Yes,No" }}</td></tr>
+                    <tr><th>Bareos ID:</th> <td class="text-mono">{{ client.bareos_id }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="cd-section">
+            <div class="cd-section-title">Retention Policies</div>
+            <div class="cd-section-body">
+                <table class="cd-info-table">
+                    <tr><th>Auto Prune:</th>     <td>{{ client.auto_prune|yesno:"Yes,No" }}</td></tr>
+                    <tr><th>File Retention:</th> <td>{{ client.file_retention_days }} day{{ client.file_retention_days|pluralize }}</td></tr>
+                    <tr><th>Job Retention:</th>  <td>{{ client.job_retention_days }} day{{ client.job_retention_days|pluralize }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Tab: Settings ────────────────────────────────────── -->
+    <div id="cd-settings" class="cd-panel">
+
+        <!-- Toolbar -->
+        <div class="cd-settings-toolbar">
+            <span class="cd-settings-count">Client: 1 resource(s)</span>
+            <div class="cd-settings-actions">
+                <button class="btn btn-primary btn-sm" id="cd-preview-btn" onclick="cdTogglePreview()">Preview</button>
+                <button class="btn btn-primary btn-sm" disabled title="Not available in web UI">Edit…</button>
+                <button class="btn btn-primary btn-sm" onclick="cdExportConf()">Export .conf</button>
+                <button class="btn btn-primary btn-sm" disabled title="Not available in web UI">Export ZIP</button>
+            </div>
+        </div>
+
+        <!-- Split pane -->
+        <div class="cd-settings-panes">
+            <!-- Left: resource list -->
+            <div class="cd-settings-list">
+                <table class="cd-res-table">
+                    <thead><tr><th>Name</th><th>Source File</th></tr></thead>
+                    <tbody>
+                        <tr class="cd-res-row selected">
+                            <td><span class="cd-res-icon">▪</span>{{ client.name }}</td>
+                            <td class="text-mono text-sm">{{ conf_filename }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Right: config preview (two modes, toggled by Preview button) -->
+            <div class="cd-settings-preview">
+
+                <div class="cd-conf-header">
+                    <strong>Client: {{ client.name }}</strong>
+                    <em class="cd-conf-source text-muted text-sm">Source: etc/bareos/bareos-dir.d/client/{{ conf_filename }}</em>
+                </div>
+                <hr class="cd-conf-sep">
+
+                <!-- Mode A: table / list view (default) -->
+                <div id="cd-preview-list">
+                    <table class="cd-preview-table">
+                        {% for key, val in config_pairs %}
+                        <tr>
+                            <td class="cd-preview-key">{{ key }}</td>
+                            <td class="cd-preview-val">{{ val }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+
+                <!-- Mode B: Bareos .conf syntax -->
+                <div id="cd-preview-conf" style="display:none">
+                    <pre class="cd-conf-pre" id="cd-conf-text">Client {
+{% for key, val in config_pairs %}  {{ key }} = {{ val }}
+{% endfor %}}</pre>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Tab: Jobs ─────────────────────────────────────────── -->
+    <div id="cd-jobs" class="cd-panel">
+
+        <div class="cd-jobs-header">
+            <span class="text-sm">Recent jobs for this client:</span>
+            <button class="btn btn-primary btn-sm" onclick="location.reload()">Refresh</button>
+        </div>
+
+        {% if recent_jobs %}
+        <div class="cd-jobs-scroll">
+            <table class="table table-striped table-sm cd-jobs-table">
+                <thead>
+                    <tr>
+                        <th class="cd-th-num">Job ID</th>
+                        <th>Name</th>
+                        <th>Start</th>
+                        <th class="cd-th-num">Duration</th>
+                        <th>Level</th>
+                        <th class="cd-th-num">Files</th>
+                        <th class="cd-th-num">Bytes</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in recent_jobs %}
+                    <tr>
+                        <td class="cd-th-num text-mono text-sm">{{ job.bareos_id }}</td>
+                        <td class="text-sm">{{ job.name }}</td>
+                        <td class="text-mono text-sm">{{ job.actual_time|date:"d.m.Y H:i"|default:"—" }}</td>
+                        <td class="cd-th-num text-mono text-sm">{{ job.duration_str }}</td>
+                        <td class="text-sm">{{ job.get_level_display }}</td>
+                        <td class="cd-th-num text-sm">{{ job.files }}</td>
+                        <td class="cd-th-num text-sm">{{ job.bytes|filesizeformat }}</td>
+                        <td class="cd-job-status-{{ job.status|lower }} text-sm">
+                            {% if job.status == 'T' %}OK
+                            {% elif job.status == 'W' %}Warn
+                            {% elif job.status == 'R' %}Running
+                            {% elif job.status == 'F' or job.status == 'E' or job.status == 'A' %}Failed
+                            {% else %}{{ job.status }}{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="cd-empty">No jobs recorded for this client.</p>
+        {% endif %}
+
+    </div>
+
+    <!-- ── Tab: Statistics ──────────────────────────────────── -->
+    <div id="cd-statistics" class="cd-panel">
+
+        <div class="cd-section">
+            <div class="cd-section-title">Statistics</div>
+            <div class="cd-section-body">
+                <table class="cd-info-table">
+                    <tr><th>Total Jobs:</th>      <td>{{ client.job_count }}</td></tr>
+                    <tr><th>Successful Jobs:</th> <td>{{ client.successful_count }}</td></tr>
+                    <tr><th>Failed Jobs:</th>     <td>{{ client.failed_count }}</td></tr>
+                    <tr><th>Total Data:</th>
+                        <td>{% if job_stats.total_bytes %}{{ job_stats.total_bytes|filesizeformat }}{% else %}0 B{% endif %}</td></tr>
+                    <tr><th>Total Files:</th>
+                        <td>{% if job_stats.total_files %}{{ job_stats.total_files }}{% else %}0{% endif %}</td></tr>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="cd-footer">
+        <button class="btn btn-primary btn-sm" onclick="overlayDialog.close()">Close</button>
+    </div>
+
+</div><!-- /.cd -->
+
+<style>
+.cd { display: flex; flex-direction: column; height: 100%; }
+
+/* Tab bar */
+.cd-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+    flex-shrink: 0;
+    padding: 0 12px;
+}
+.cd-tab {
+    all: unset;
+    padding: 8px 18px 7px;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    color: var(--color-text-muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+}
+.cd-tab:hover { color: var(--color-text); background: var(--color-bg-hover); }
+.cd-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: var(--font-semibold); background: var(--color-bg); }
+
+/* Panels */
+.cd-panel { display: none; flex: 1; overflow-y: auto; padding: 14px 16px 0; }
+.cd-panel.active { display: flex; flex-direction: column; }
+
+/* Section (QGroupBox style) */
+.cd-section { margin-bottom: 14px; }
+.cd-section-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cd-section-title::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
+.cd-section-body {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 8px 14px;
+    background: var(--color-bg);
+}
+.cd-info-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.cd-info-table th { text-align: left; color: var(--color-text); font-weight: var(--font-normal); padding: 2px 16px 2px 0; white-space: nowrap; width: 150px; }
+.cd-info-table td { padding: 2px 0; }
+
+/* Status colors */
+.cd-status-online  { color: var(--color-status-success); }
+.cd-status-offline { color: var(--color-status-error); }
+.cd-status-unknown { color: var(--color-status-warning); }
+
+/* ── Settings tab ── */
+.cd-settings-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0 8px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 8px;
+}
+.cd-settings-count { font-size: var(--text-sm); font-weight: var(--font-semibold); }
+.cd-settings-actions { display: flex; gap: 6px; }
+
+.cd-settings-panes {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+.cd-settings-list {
+    width: 200px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--color-border);
+    overflow-y: auto;
+}
+.cd-res-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.cd-res-table thead th {
+    background: var(--color-bg-secondary);
+    padding: 4px 8px;
+    font-weight: var(--font-semibold);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+.cd-res-row td { padding: 4px 8px; cursor: pointer; white-space: nowrap; }
+.cd-res-row:hover { background: var(--color-bg-hover); }
+.cd-res-row.selected td { background: var(--color-primary); color: #fff; }
+.cd-res-icon { color: #8888aa; margin-right: 4px; font-size: 10px; }
+.cd-res-row.selected .cd-res-icon { color: #dde; }
+
+.cd-settings-preview {
+    flex: 1;
+    overflow: auto;
+    padding: 10px 14px;
+    background: var(--color-bg);
+}
+.cd-conf-header { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.cd-conf-sep { border: none; border-top: 1px solid var(--color-border); margin: 6px 0 10px; }
+.cd-conf-source { font-style: italic; }
+.cd-conf-pre {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    margin: 0;
+    white-space: pre;
+    color: var(--color-text);
+    background: transparent;
+}
+.cd-conf-pre strong, .cd-conf-pre b { font-weight: var(--font-semibold); }
+
+/* ── Jobs tab ── */
+.cd-jobs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0 8px;
+    flex-shrink: 0;
+}
+.cd-jobs-scroll { flex: 1; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 4px; }
+.cd-jobs-table { font-size: var(--text-sm); width: 100%; min-width: 600px; }
+.cd-jobs-table td, .cd-jobs-table th { padding: 3px 8px; }
+.cd-th-num { text-align: right; }
+
+/* Job status colors in the jobs table */
+.cd-job-status-t { color: var(--color-status-success); font-weight: var(--font-semibold); }
+.cd-job-status-w { color: var(--color-status-warning); font-weight: var(--font-semibold); }
+.cd-job-status-f, .cd-job-status-e, .cd-job-status-a { color: var(--color-status-error); font-weight: var(--font-semibold); }
+.cd-job-status-r { color: var(--color-status-running); }
+
+/* Footer */
+.cd-footer {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 0 12px;
+    border-top: 1px solid var(--color-border);
+    margin-top: 4px;
+}
+.cd-empty { color: var(--color-text-muted); font-size: var(--text-sm); padding: 8px 0; }
+</style>
+
+<script>
+// Tab switching
+(function () {
+    document.querySelectorAll('.cd-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.cd-tab').forEach(function (t) { t.classList.remove('active'); });
+            document.querySelectorAll('.cd-panel').forEach(function (p) { p.classList.remove('active'); });
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+    });
+}());
+
+// Format the config preview with bold keys
+(function () {
+    const pre = document.getElementById('cd-conf-text');
+    if (!pre) return;
+    const lines = pre.textContent.split('\n');
+    pre.innerHTML = lines.map(function (line) {
+        const m = line.match(/^(\s*)([\w\s]+?)\s*=\s*(.*)$/);
+        if (!m) return line;
+        return m[1] + '<b>' + m[2] + '</b> = ' + m[3];
+    }).join('\n');
+}());
+
+let _cdPreviewMode = 'list';
+function cdTogglePreview() {
+    _cdPreviewMode = _cdPreviewMode === 'list' ? 'conf' : 'list';
+    document.getElementById('cd-preview-list').style.display = _cdPreviewMode === 'list' ? '' : 'none';
+    document.getElementById('cd-preview-conf').style.display = _cdPreviewMode === 'conf' ? '' : 'none';
+    const btn = document.getElementById('cd-preview-btn');
+    if (btn) btn.textContent = _cdPreviewMode === 'list' ? 'Preview' : 'List View';
+}
+
+function cdExportConf() {
+    const text = document.getElementById('cd-conf-text')?.textContent || '';
+    const filename = '{{ conf_filename }}';
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+</script>

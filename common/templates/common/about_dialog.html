@@ -1,0 +1,146 @@
+<div class="about-dialog">
+
+    <!-- Header row: logo + title block -->
+    <div class="about-header">
+        <!-- Onesimus shield logo (inline SVG) -->
+        <svg class="about-logo" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- shield body -->
+            <path d="M50 4 L94 22 L94 60 Q94 92 50 116 Q6 92 6 60 L6 22 Z"
+                  fill="#0d6efd" opacity="0.15" stroke="#0d6efd" stroke-width="3"/>
+            <!-- outer ring -->
+            <circle cx="50" cy="60" r="28" fill="none" stroke="#0d6efd" stroke-width="2.5"/>
+            <!-- middle ring -->
+            <circle cx="50" cy="60" r="18" fill="none" stroke="#0d6efd" stroke-width="1.5" opacity="0.7"/>
+            <!-- inner dot -->
+            <circle cx="50" cy="60" r="5" fill="#0d6efd"/>
+            <!-- sweep line (radar) -->
+            <line x1="50" y1="60" x2="72" y2="42" stroke="#0d6efd" stroke-width="2" stroke-linecap="round"/>
+            <!-- tick marks on outer ring -->
+            <line x1="50" y1="32" x2="50" y2="37" stroke="#0d6efd" stroke-width="1.5"/>
+            <line x1="50" y1="83" x2="50" y2="88" stroke="#0d6efd" stroke-width="1.5"/>
+            <line x1="22" y1="60" x2="27" y2="60" stroke="#0d6efd" stroke-width="1.5"/>
+            <line x1="73" y1="60" x2="78" y2="60" stroke="#0d6efd" stroke-width="1.5"/>
+        </svg>
+
+        <div class="about-title-block">
+            <div class="about-appname">Onesimus</div>
+            <div class="about-version">Version {{ version }} (Build {{ build }})</div>
+            <div class="about-tagline">Modern Web Interface for Bareos Backup</div>
+        </div>
+    </div>
+
+    <hr class="about-sep">
+
+    <!-- Description -->
+    <p class="about-description">
+        <em>In the Letter to Philemon, the Apostle Paul sends back Onesimus — a runaway
+        slave whose name means "the useful one" in Greek. Once lost, now returned with
+        purpose: no longer useless, but indispensable.</em>
+    </p>
+    <p class="about-body">
+        Backups share that story. Data slips away — through failure, accident, or time.
+        What matters is that it comes back, intact and useful, when you need it most.
+        Onesimus helps you manage that journey: keeping watch over your Bareos installation.
+    </p>
+
+    <!-- Meta table -->
+    <dl class="about-meta">
+        <dt>Author</dt>
+        <dd>Jörg Bernau &lt;<a href="mailto:joerg@bernau.family">joerg@bernau.family</a>&gt;</dd>
+
+        <dt>Copyright</dt>
+        <dd>© 2025–2026 Jörg Bernau. All rights reserved.</dd>
+
+        <dt>Website</dt>
+        <dd><a href="https://onesimus.io" target="_blank" rel="noopener">https://onesimus.io</a></dd>
+
+        <dt>Support</dt>
+        <dd><a href="mailto:support@onesimus.io">support@onesimus.io</a></dd>
+    </dl>
+
+    <!-- License -->
+    <dl class="about-meta">
+        <dt>License</dt>
+        <dd>GNU General Public License v3.0</dd>
+    </dl>
+    <p class="about-license-text">
+        This program is free software: you can redistribute it and/or modify it under
+        the terms of the GNU General Public License as published by the Free Software
+        Foundation, either version 3 of the License, or (at your option) any later
+        version. This program is distributed in the hope that it will be useful, but
+        WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+        FITNESS FOR A PARTICULAR PURPOSE.
+    </p>
+
+    <!-- Build info -->
+    <dl class="about-meta about-build">
+        {% if git_hash %}
+        <dt>Git</dt>
+        <dd>{{ git_hash }}{% if git_branch %} ({{ git_branch }}){% endif %}</dd>
+        {% endif %}
+        <dt>Built with</dt>
+        <dd>Django {{ django_version }}, Python {{ python_version }}</dd>
+    </dl>
+
+    <!-- Footer / Close button -->
+    <div class="about-footer">
+        <button class="btn btn-primary" onclick="overlayDialog.close()">Close</button>
+    </div>
+
+</div>
+
+<style>
+.about-dialog { padding: 0; font-size: var(--text-sm); }
+
+.about-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 24px 16px;
+}
+.about-logo { width: 72px; height: 86px; flex-shrink: 0; }
+
+.about-appname  { font-size: 2rem; font-weight: var(--font-bold); line-height: 1.1; }
+.about-version  { color: var(--color-text-muted); margin-top: 4px; }
+.about-tagline  { margin-top: 6px; }
+
+.about-sep { border: none; border-top: 1px solid var(--color-border); margin: 0 24px; }
+
+.about-description {
+    padding: 16px 24px 0;
+    color: var(--color-text);
+    line-height: 1.6;
+}
+.about-body {
+    padding: 10px 24px 0;
+    line-height: 1.6;
+}
+
+.about-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    padding: 12px 24px 0;
+}
+.about-meta dt { font-weight: var(--font-semibold); white-space: nowrap; }
+.about-meta dd { margin: 0; }
+.about-meta a { color: var(--color-primary); text-decoration: none; }
+.about-meta a:hover { text-decoration: underline; }
+
+.about-license-text {
+    padding: 6px 24px 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+}
+
+.about-build { padding-bottom: 0; }
+
+.about-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 14px 24px 18px;
+    border-top: 1px solid var(--color-border);
+    margin-top: 14px;
+}
+</style>

@@ -1,0 +1,23 @@
+# Onesimus Web Application - Production Requirements
+# For production deployment with PostgreSQL support
+
+-r requirements.txt
+
+# Database (PostgreSQL)
+psycopg2-binary==2.9.9
+
+# Caching & Sessions (Optional but recommended)
+redis==5.0.1
+
+# WSGI Server (use with reverse proxy like Nginx)
+gunicorn==21.2.0
+
+# Environment Management
+python-dotenv==1.2.1
+
+# Security Hardening (Optional)
+# django-cors-headers==4.3.1
+# django-ratelimit==4.1.0
+
+# Monitoring & Logging (Optional)
+# sentry-sdk==1.40.0

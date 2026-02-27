@@ -1,0 +1,268 @@
+/* ============================================================
+   Base Global Styles
+   ============================================================ */
+
+@import url('variables.css');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+}
+
+body {
+    font-family: var(--font-base);
+    font-size: var(--text-base);
+    line-height: var(--line-normal);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+/* ============================================================
+   Typography
+   ============================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--font-bold);
+    line-height: var(--line-tight);
+    margin-bottom: var(--space-sm);
+}
+
+h1 { font-size: var(--text-4xl); }
+h2 { font-size: var(--text-3xl); }
+h3 { font-size: var(--text-2xl); }
+h4 { font-size: var(--text-xl); }
+h5 { font-size: var(--text-lg); }
+h6 { font-size: var(--text-base); }
+
+p {
+    margin-bottom: var(--space-md);
+    color: var(--color-text);
+}
+
+small {
+    font-size: var(--text-sm);
+}
+
+strong {
+    font-weight: var(--font-bold);
+}
+
+em {
+    font-style: italic;
+}
+
+code {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-status-warning);
+    padding: 2px 6px;
+    border-radius: var(--border-radius-sm);
+}
+
+pre {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text);
+    padding: var(--space-md);
+    border-radius: var(--border-radius-md);
+    overflow-x: auto;
+    margin-bottom: var(--space-md);
+    border: 1px solid var(--color-border);
+}
+
+pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+}
+
+/* ============================================================
+   Links
+   ============================================================ */
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+    cursor: pointer;
+}
+
+a:hover {
+    color: var(--color-primary-light);
+    text-decoration: underline;
+}
+
+a:active {
+    color: var(--color-primary-dark);
+}
+
+/* ============================================================
+   Lists
+   ============================================================ */
+
+ul, ol {
+    margin-left: var(--space-lg);
+    margin-bottom: var(--space-md);
+}
+
+li {
+    margin-bottom: var(--space-xs);
+}
+
+/* ============================================================
+   Forms (reset defaults)
+   ============================================================ */
+
+input, textarea, select, button {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+}
+
+input, textarea, select {
+    background-color: var(--color-bg-input);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    padding: var(--space-input-padding) var(--space-sm);
+    border-radius: var(--border-radius-md);
+    transition: border-color var(--transition-fast);
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+input:disabled, textarea:disabled, select:disabled {
+    background-color: var(--color-bg);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* ============================================================
+   Tables
+   ============================================================ */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--space-lg);
+}
+
+th {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text);
+    font-weight: var(--font-bold);
+    padding: var(--space-sm) var(--space-md);
+    text-align: left;
+    border: 1px solid var(--color-border);
+    border-bottom: 2px solid var(--color-border);
+}
+
+td {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+tr:hover {
+    background-color: var(--color-hover);
+}
+
+/* ============================================================
+   Horizontal Rule
+   ============================================================ */
+
+hr {
+    border: none;
+    height: 1px;
+    background-color: var(--color-border);
+    margin: var(--space-lg) 0;
+}
+
+/* ============================================================
+   Scrollbar (Webkit browsers)
+   ============================================================ */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-light);
+}
+
+/* ============================================================
+   Selection
+   ============================================================ */
+
+::selection {
+    background-color: var(--color-selection);
+    color: var(--color-text-inverse);
+}
+
+::-moz-selection {
+    background-color: var(--color-selection);
+    color: var(--color-text-inverse);
+}
+
+/* ============================================================
+   Utility Classes
+   ============================================================ */
+
+.text-primary { color: var(--color-primary); }
+.text-success { color: var(--color-status-success); }
+.text-error { color: var(--color-status-error); }
+.text-warning { color: var(--color-status-warning); }
+.text-muted { color: var(--color-text-muted); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-secondary { background-color: var(--color-bg-secondary); }
+.bg-success { background-color: var(--color-status-success); }
+.bg-error { background-color: var(--color-status-error); }
+
+.rounded { border-radius: var(--border-radius-md); }
+.rounded-sm { border-radius: var(--border-radius-sm); }
+.rounded-lg { border-radius: var(--border-radius-lg); }
+.rounded-full { border-radius: var(--border-radius-full); }
+
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+
+.mb-sm { margin-bottom: var(--space-sm); }
+.mb-md { margin-bottom: var(--space-md); }
+.mb-lg { margin-bottom: var(--space-lg); }
+
+.p-sm { padding: var(--space-sm); }
+.p-md { padding: var(--space-md); }
+.p-lg { padding: var(--space-lg); }
+
+.hidden { display: none; }
+.invisible { visibility: hidden; }

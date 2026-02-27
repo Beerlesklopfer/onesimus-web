@@ -1,0 +1,521 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block title %}Schedules — Onesimus{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Gantt page ─────────────────────────────────────────────────── */
+.gantt-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    font-size: var(--text-sm);
+}
+
+/* ── Local toolbar ──────────────────────────────────────────────── */
+.gantt-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 32px;
+    padding: 0 8px;
+    background: var(--color-bg-toolbar);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    gap: 4px;
+}
+.gantt-tb-group { display: flex; align-items: center; gap: 2px; }
+.gantt-tb-btn {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    height: 22px;
+    font-size: var(--text-sm);
+    font-family: var(--font-base);
+    color: var(--color-text);
+    cursor: pointer;
+    border-radius: var(--border-radius-sm);
+    text-decoration: none;
+    transition: background var(--transition-fast);
+    white-space: nowrap;
+}
+.gantt-tb-btn:hover { background: var(--color-bg-hover); color: var(--color-text); text-decoration: none; }
+.gantt-tb-sep {
+    width: 1px; height: 18px;
+    background: var(--color-border);
+    margin: 0 4px; flex-shrink: 0;
+}
+.gantt-tb-week {
+    font-size: var(--text-sm);
+    min-width: 190px; text-align: center;
+    padding: 0 4px; color: var(--color-text);
+}
+.gantt-tb-nav {
+    all: unset;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; font-size: 16px;
+    color: var(--color-text); cursor: pointer;
+    border-radius: var(--border-radius-sm);
+    transition: background var(--transition-fast);
+    text-decoration: none;
+}
+.gantt-tb-nav:hover { background: var(--color-bg-hover); color: var(--color-text); text-decoration: none; }
+
+/* ── Main body ──────────────────────────────────────────────────── */
+.gantt-main { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+
+/* ── Sidebar ────────────────────────────────────────────────────── */
+.gantt-sidebar {
+    width: 210px; flex-shrink: 0;
+    border-right: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+    display: flex; flex-direction: column;
+    overflow-y: auto; overflow-x: hidden;
+}
+.gantt-sb-head {
+    padding: 4px 8px 3px;
+    font-size: 10px; font-weight: var(--font-bold);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    background: var(--color-bg-toolbar);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+.gantt-sb-list { padding: 3px 0; }
+.gantt-sb-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 2px 8px; cursor: pointer; user-select: none;
+}
+.gantt-sb-item:hover { background: var(--color-bg-hover); }
+.gantt-sb-item input[type=checkbox] { flex-shrink: 0; cursor: pointer; margin: 0; }
+.gantt-sb-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.gantt-sb-name { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+/* Status dot colours */
+.dot-T { background: var(--color-status-success); }
+.dot-W { background: var(--color-status-warning); }
+.dot-F, .dot-E, .dot-A { background: var(--color-status-error); }
+.dot-R { background: var(--color-status-running); }
+.dot-q { background: var(--color-text-disabled); }
+
+/* Jobs mini-table */
+.gantt-sb-divider { height: 1px; background: var(--color-border); margin: 3px 0; }
+.gantt-sb-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.gantt-sb-table th {
+    padding: 2px 6px; font-weight: var(--font-semibold);
+    color: var(--color-text-muted); text-align: left;
+    border-bottom: 1px solid var(--color-border); white-space: nowrap;
+}
+.gantt-sb-table td {
+    padding: 2px 6px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    max-width: 90px; color: var(--color-text);
+}
+.gantt-sb-table tr.sched-row:hover td { background: var(--color-bg-hover); }
+
+/* ── Gantt area ─────────────────────────────────────────────────── */
+.gantt-area { flex: 1; overflow: auto; background: var(--color-bg); }
+.gantt-inner { min-width: 1200px; width: 100%; position: relative; }
+
+/* ── Time header ────────────────────────────────────────────────── */
+.gantt-time-header {
+    display: flex; align-items: stretch;
+    height: 40px;
+    position: sticky; top: 0; z-index: 20;
+    background: var(--color-bg-secondary);
+    border-bottom: 2px solid var(--color-border);
+}
+.gantt-label-spacer {
+    width: 150px; flex-shrink: 0;
+    background: var(--color-bg-toolbar);
+    border-right: 1px solid var(--color-border);
+    position: sticky; left: 0; z-index: 25;
+}
+.gantt-day-col {
+    flex: 1; position: relative;
+    border-right: 1px solid var(--color-border);
+    min-width: 0; overflow: hidden;
+}
+.gantt-day-col:last-child { border-right: none; }
+.gantt-day-name {
+    font-size: 11px; font-weight: var(--font-semibold);
+    color: var(--color-text); padding: 2px 5px 1px;
+    border-bottom: 1px solid var(--color-divider);
+    height: 20px; display: flex; align-items: center;
+    overflow: hidden; white-space: nowrap;
+}
+.gantt-day-name.gantt-today { color: var(--color-primary); }
+.gantt-day-hours { position: relative; height: 18px; }
+.gantt-hr-label {
+    position: absolute; font-size: 9px;
+    color: var(--color-text-muted); top: 2px;
+    white-space: nowrap; transform: translateX(-50%);
+    pointer-events: none;
+}
+.gantt-hr-label:first-child { transform: none; }
+
+/* ── Rows area & now-line ───────────────────────────────────────── */
+.gantt-rows-area { position: relative; }
+.gantt-now-line {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px; background: #ef5350;
+    pointer-events: none; z-index: 15;
+}
+.gantt-now-line::before {
+    content: ''; position: absolute;
+    top: -1px; left: -3px;
+    width: 8px; height: 8px;
+    border-radius: 50%; background: #ef5350;
+}
+
+/* ── Sections ───────────────────────────────────────────────────── */
+.gantt-section-header {
+    font-size: 10px; font-weight: var(--font-bold);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    padding: 3px 0 3px 8px;
+    background: var(--color-bg-tertiary);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+.gantt-section-spacer { height: 10px; background: var(--color-bg); }
+
+/* ── Rows ───────────────────────────────────────────────────────── */
+.gantt-row {
+    display: flex; align-items: stretch;
+    height: 26px; border-bottom: 1px solid var(--color-divider);
+}
+.gantt-row:hover { background: var(--color-bg-hover); }
+.gantt-row-label {
+    width: 150px; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    justify-content: center;
+    padding: 1px 6px;
+    border-right: 1px solid var(--color-border);
+    overflow: hidden;
+    position: sticky; left: 0; z-index: 10;
+    background: inherit;
+}
+.gantt-row:hover .gantt-row-label { background: var(--color-bg-hover); }
+.gantt-rl-name {
+    font-size: 11px; color: var(--color-text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    line-height: 1.3;
+}
+.gantt-rl-sub {
+    font-size: 9px; color: var(--color-text-muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    line-height: 1.2;
+}
+
+/* ── Track & bars ───────────────────────────────────────────────── */
+.gantt-track {
+    flex: 1; position: relative;
+    /* Day-boundary grid lines every 1/7 = 14.2857% */
+    background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent calc(14.2856% - 0.5px),
+        var(--color-divider) calc(14.2856% - 0.5px),
+        var(--color-divider) 14.2857%
+    );
+}
+.gantt-bar {
+    position: absolute; top: 4px; bottom: 4px;
+    border-radius: 2px; cursor: pointer;
+    min-width: 3px; z-index: 1;
+    transition: opacity var(--transition-fast);
+}
+.gantt-bar:hover { opacity: 0.75; }
+.gantt-bar-T { background: var(--color-status-success); }
+.gantt-bar-W { background: var(--color-status-warning); }
+.gantt-bar-F, .gantt-bar-E, .gantt-bar-A { background: var(--color-status-error); }
+.gantt-bar-R { background: var(--color-status-running); animation: gantt-pulse 1.4s ease-in-out infinite; }
+.gantt-bar-q { background: transparent; border: 1px dashed var(--color-text-disabled); opacity: 0.6; }
+.gantt-bar-I { background: var(--color-status-warning); opacity: 0.5; }
+
+@keyframes gantt-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+}
+
+/* ── Status bar ─────────────────────────────────────────────────── */
+.gantt-statusbar {
+    height: 22px; padding: 0 10px;
+    font-size: 11px; color: var(--color-text-muted);
+    background: var(--color-bg-secondary);
+    border-top: 1px solid var(--color-border);
+    display: flex; align-items: center; flex-shrink: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gantt-page">
+
+  <!-- ── Local toolbar ──────────────────────────────────────── -->
+  <div class="gantt-toolbar">
+    <div class="gantt-tb-group">
+      <span class="gantt-tb-btn" style="cursor:default; opacity:.8">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="1" y="1" width="6" height="6" rx="1"/>
+          <rect x="9" y="1" width="6" height="6" rx="1"/>
+          <rect x="1" y="9" width="6" height="6" rx="1"/>
+          <rect x="9" y="9" width="6" height="6" rx="1"/>
+        </svg>
+        Timeline
+      </span>
+      <div class="gantt-tb-sep"></div>
+      <a href="?week={{ week_offset|add:-1 }}" class="gantt-tb-nav" title="Previous week">&#8249;</a>
+      <span class="gantt-tb-week">{{ week_label }}</span>
+      <a href="?week={{ week_offset|add:1 }}" class="gantt-tb-nav" title="Next week">&#8250;</a>
+      {% if week_offset != 0 %}
+      <div class="gantt-tb-sep"></div>
+      <a href="{% url 'schedule:gantt' %}" class="gantt-tb-btn">Today</a>
+      {% endif %}
+    </div>
+    <div class="gantt-tb-group">
+      <a href="?week={{ week_offset }}" class="gantt-tb-btn" title="Refresh">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M13.65 2.35A8 8 0 1 0 15 8h-2a6 6 0 1 1-1.06-3.36L10 6h5V1l-1.35 1.35z"/>
+        </svg>
+        Refresh
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Main body ──────────────────────────────────────────── -->
+  <div class="gantt-main">
+
+    <!-- Sidebar -->
+    <div class="gantt-sidebar">
+      <div class="gantt-sb-head">Schedules</div>
+      <div class="gantt-sb-list">
+        {% for s in gantt_schedules %}
+        <label class="gantt-sb-item">
+          <input type="checkbox" class="gantt-sched-check" data-id="{{ s.id }}" checked>
+          <span class="gantt-sb-dot dot-{{ s.overall_status }}"></span>
+          <span class="gantt-sb-name" title="{{ s.name }}">{{ s.name }}</span>
+        </label>
+        {% empty %}
+        <div style="padding:8px;font-size:11px;color:var(--color-text-muted)">No schedules found.</div>
+        {% endfor %}
+      </div>
+
+      <div class="gantt-sb-divider"></div>
+      <div class="gantt-sb-head">Jobs</div>
+      <table class="gantt-sb-table">
+        <thead>
+          <tr><th>Schedule</th><th>Client</th><th>Est.</th></tr>
+        </thead>
+        <tbody>
+          {% for s in gantt_schedules %}
+          <tr class="sched-row" data-id="{{ s.id }}"
+              title="{{ s.job_name }}&#10;{{ s.client_name }}">
+            <td>{{ s.name }}</td>
+            <td>{{ s.client_name }}</td>
+            <td>{{ s.est_dur }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div><!-- /sidebar -->
+
+    <!-- Gantt area -->
+    <div class="gantt-area" id="gantt-area">
+      <div class="gantt-inner" id="gantt-inner">
+
+        <!-- Time header (sticky top) -->
+        <div class="gantt-time-header">
+          <div class="gantt-label-spacer"></div>
+          {% for d in week_dates %}
+          <div class="gantt-day-col">
+            <div class="gantt-day-name{% if forloop.counter0 == today_weekday %} gantt-today{% endif %}">
+              {{ d|date:"D j.n." }}
+            </div>
+            <div class="gantt-day-hours">
+              <span class="gantt-hr-label" style="left:0%">00</span>
+              <span class="gantt-hr-label" style="left:16.667%">04</span>
+              <span class="gantt-hr-label" style="left:33.333%">08</span>
+              <span class="gantt-hr-label" style="left:50%">12</span>
+              <span class="gantt-hr-label" style="left:66.667%">16</span>
+              <span class="gantt-hr-label" style="left:83.333%">20</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Rows area -->
+        <div class="gantt-rows-area" id="gantt-rows-area">
+
+          {% if now_pct is not None %}
+          <div class="gantt-now-line"
+               style="left:calc({{ now_line_offset_px }}px + {{ now_pct }}%)"></div>
+          {% endif %}
+
+          <!-- Section: Clients (FD) -->
+          <div class="gantt-section-header">Clients (FD)</div>
+          {% for s in gantt_schedules %}
+          <div class="gantt-row" id="gantt-fd-{{ s.id }}" data-sched-id="{{ s.id }}"{% if s.job_id %} data-job-id="{{ s.job_id }}"{% endif %}>
+            <div class="gantt-row-label"
+                 title="{{ s.job_name }}&#10;Client: {{ s.client_name }}">
+              <span class="gantt-rl-name">{{ s.name }}</span>
+              <span class="gantt-rl-sub">{{ s.client_name }}</span>
+            </div>
+            <div class="gantt-track">
+              {% for run in s.runs %}
+              <div class="gantt-bar gantt-bar-{{ run.status }}"
+                   style="left:{{ run.pct_start }}%;width:{{ run.pct_width }}%"
+                   title="{{ run.at }} · {{ run.level }} · {{ run.dur_min }}min"></div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+
+          <div class="gantt-section-spacer"></div>
+
+          <!-- Section: Storage (SD) -->
+          <div class="gantt-section-header">Storage (SD)</div>
+          {% for s in gantt_schedules %}
+          <div class="gantt-row" id="gantt-sd-{{ s.id }}" data-sched-id="{{ s.id }}"{% if s.job_id %} data-job-id="{{ s.job_id }}"{% endif %}>
+            <div class="gantt-row-label"
+                 title="{{ s.job_name }}&#10;{{ s.storage }} / {{ s.pool }}">
+              <span class="gantt-rl-name">{{ s.name }}</span>
+              <span class="gantt-rl-sub">{{ s.storage }}</span>
+            </div>
+            <div class="gantt-track">
+              {% for run in s.runs %}
+              <div class="gantt-bar gantt-bar-{{ run.status }}"
+                   style="left:{{ run.pct_start }}%;width:{{ run.pct_width }}%"
+                   title="{{ run.at }} · {{ run.level }} · {{ run.dur_min }}min"></div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+
+        </div><!-- /gantt-rows-area -->
+      </div><!-- /gantt-inner -->
+    </div><!-- /gantt-area -->
+
+  </div><!-- /gantt-main -->
+
+  <!-- Status bar -->
+  <div class="gantt-statusbar">
+    {{ schedule_count }} schedule{{ schedule_count|pluralize }} loaded
+    ({{ total_runs }} run entr{{ total_runs|pluralize:"y,ies" }})
+    {% if week_offset != 0 %}&nbsp;·&nbsp; week {{ week_offset|stringformat:"+d" }}{% endif %}
+  </div>
+
+</div><!-- /gantt-page -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    /* ── Checkbox: show/hide Gantt rows ─────────────────────── */
+    document.querySelectorAll('.gantt-sched-check').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            var id   = this.dataset.id;
+            var show = this.checked;
+            ['gantt-fd-', 'gantt-sd-'].forEach(function (prefix) {
+                var row = document.getElementById(prefix + id);
+                if (row) row.style.display = show ? '' : 'none';
+            });
+            var tr = document.querySelector('.sched-row[data-id="' + id + '"]');
+            if (tr) tr.style.display = show ? '' : 'none';
+        });
+    });
+
+    /* ── Sidebar hover → highlight Gantt rows ───────────────── */
+    document.querySelectorAll('.sched-row').forEach(function (tr) {
+        tr.addEventListener('mouseenter', function () {
+            var id = this.dataset.id;
+            ['gantt-fd-', 'gantt-sd-'].forEach(function (prefix) {
+                var row = document.getElementById(prefix + id);
+                if (row) row.style.outline = '1px solid var(--color-primary)';
+            });
+        });
+        tr.addEventListener('mouseleave', function () {
+            var id = this.dataset.id;
+            ['gantt-fd-', 'gantt-sd-'].forEach(function (prefix) {
+                var row = document.getElementById(prefix + id);
+                if (row) row.style.outline = '';
+            });
+        });
+    });
+
+    /* ── Dblclick on row → open job detail dialog ───────────── */
+    function ganttFetchJob(jobId, schedName) {
+        fetch('/jobs/' + jobId + '/?mode=gantt', { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.text() : Promise.reject(r.status); })
+            .then(function (html) {
+                document.getElementById('overlay-dialog-content').innerHTML = html;
+                overlayDialog.open('Job Details \u2014 ' + schedName);
+            })
+            .catch(function () { overlayToast.show('Could not load job details', 'error'); });
+    }
+    document.querySelectorAll('.gantt-row[data-job-id]').forEach(function (row) {
+        row.style.cursor = 'pointer';
+        row.addEventListener('dblclick', function () {
+            ganttFetchJob(this.dataset.jobId, this.querySelector('.gantt-rl-name').textContent.trim());
+        });
+    });
+
+    {% if now_pct is not None %}
+    /* ── Scroll current time into view on load ──────────────── */
+    (function () {
+        var area  = document.getElementById('gantt-area');
+        var inner = document.getElementById('gantt-inner');
+        if (!area || !inner) return;
+        var totalW  = inner.scrollWidth;
+        var trackW  = totalW - 150;
+        var nowPx   = 150 + ({{ now_pct }} / 100) * trackW;
+        area.scrollLeft = Math.max(0, nowPx - area.clientWidth / 2);
+    })();
+    {% endif %}
+
+    /* ── Horizontal scroll via vertical mouse wheel (momentum) ─ */
+    (function () {
+        var area = document.getElementById('gantt-area');
+        if (!area) return;
+
+        var velocity = 0;
+        var rafId    = null;
+        var lastTime = null;
+        var FRICTION = 0.88;    // deceleration per frame (~16 ms)
+        var MIN_V    = 0.8;     // stop threshold px/frame
+
+        function step(ts) {
+            if (lastTime === null) lastTime = ts;
+            var dt = Math.min(ts - lastTime, 50);   // cap jump on tab-switch
+            lastTime = ts;
+            area.scrollLeft += velocity * (dt / 16.67);
+            velocity *= FRICTION;
+            if (Math.abs(velocity) > MIN_V) {
+                rafId = requestAnimationFrame(step);
+            } else {
+                velocity = 0;
+                rafId    = null;
+                lastTime = null;
+            }
+        }
+
+        area.addEventListener('wheel', function (e) {
+            // Only intercept pure vertical scroll (standard mouse wheel).
+            // Trackpad/tilt-wheel (deltaX ≠ 0) scrolls natively — don't block it.
+            if (e.deltaX !== 0) return;
+            e.preventDefault();
+            velocity += e.deltaY * 1.8;     // scale factor: feel / tune here
+            if (rafId === null) {
+                lastTime = null;
+                rafId = requestAnimationFrame(step);
+            }
+        }, { passive: false });
+    })();
+})();
+</script>
+{% endblock %}

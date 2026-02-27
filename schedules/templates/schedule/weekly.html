@@ -1,0 +1,27 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block title %}Schedules (Weekly) - Onesimus{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <h1>Job Schedules - Weekly Planner</h1>
+    </div>
+    <div class="panel-body">
+        <div class="alert alert-info">
+            <strong>Weekly Planner Grid (7x24)</strong> - Coming soon in Phase 5
+        </div>
+        <p>This page will display:</p>
+        <ul>
+            <li>7x24 grid showing each day and hour</li>
+            <li>Color-coded job blocks showing backup windows</li>
+            <li>Utilization heatmap for concurrent load</li>
+            <li>Drag-to-reschedule jobs (HTMX + JavaScript)</li>
+            <li>Collision detection for scheduling conflicts</li>
+            <li>Job duration statistics</li>
+        </ul>
+        <p><a href="{% url 'schedule:gantt' %}" class="btn btn-secondary">View Timeline</a></p>
+    </div>
+</div>
+{% endblock %}

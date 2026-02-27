@@ -1,0 +1,162 @@
+{% load static %}<header class="layout-menubar">
+    <nav class="menubar">
+        <div class="menubar-start">
+            <a href="/" class="menubar-brand">
+                <svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                    <circle cx="12" cy="12" r="10"/>
+                </svg>
+                Onesimus
+            </a>
+
+            <div class="menubar-item" id="menu-file">
+                <button class="menubar-btn">File</button>
+                <ul class="menubar-dropdown">
+                    <li><a class="menubar-dropdown-item" href="#" id="action-connect">Connect…</a></li>
+                    <li><a class="menubar-dropdown-item" href="#" id="action-disconnect">Disconnect</a></li>
+                    <li class="menubar-sep"></li>
+                    <li><a class="menubar-dropdown-item" href="{% url 'logout' %}">Quit</a></li>
+                </ul>
+            </div>
+
+            <div class="menubar-item" id="menu-view">
+                <button class="menubar-btn">View</button>
+                <ul class="menubar-dropdown">
+                    <li><a class="menubar-dropdown-item" href="#" id="theme-toggle">
+                        <span id="theme-toggle-label">Toggle Theme</span>
+                    </a></li>
+                    <li class="menubar-sep"></li>
+                    <li><a class="menubar-dropdown-item" href="{% url 'admin:index' %}">Administration</a></li>
+                </ul>
+            </div>
+
+            <div class="menubar-item" id="menu-help">
+                <button class="menubar-btn">Help</button>
+                <ul class="menubar-dropdown">
+                    <li><a class="menubar-dropdown-item" href="#" id="action-about">About Onesimus</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="menubar-end">
+            <div id="connection-status" class="menubar-status">
+                <span class="status-dot offline" id="connection-dot"></span>
+                <span id="connection-text" class="menubar-status-text">Disconnected</span>
+            </div>
+
+            <button class="menubar-theme-btn" id="theme-btn" title="Toggle dark / light theme">
+                <span id="theme-btn-icon">☀</span>
+            </button>
+
+            <div class="menubar-item menubar-item-right" id="menu-user">
+                <button class="menubar-btn">
+                    {% if request.user.is_authenticated %}{{ request.user.username }}{% else %}Guest{% endif %}
+                </button>
+                <ul class="menubar-dropdown menubar-dropdown-right">
+                    <li><a class="menubar-dropdown-item" href="#">Profile</a></li>
+                    <li class="menubar-sep"></li>
+                    <li><a class="menubar-dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<script>
+(function () {
+    // Qt-style menu: click to open, hover-switches when any menu is open, ESC/click-outside closes
+    const items = document.querySelectorAll('.menubar-item');
+    let openItem = null;
+
+    function openMenu(item) {
+        if (openItem) openItem.classList.remove('menu-open');
+        item.classList.add('menu-open');
+        openItem = item;
+    }
+
+    function closeAll() {
+        if (openItem) openItem.classList.remove('menu-open');
+        openItem = null;
+    }
+
+    items.forEach(function (item) {
+        const btn = item.querySelector('.menubar-btn');
+        if (!btn) return;
+
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (item.classList.contains('menu-open')) {
+                closeAll();
+            } else {
+                openMenu(item);
+            }
+        });
+
+        btn.addEventListener('mouseenter', function () {
+            if (openItem && openItem !== item) {
+                openMenu(item);
+            }
+        });
+    });
+
+    document.addEventListener('click', closeAll);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeAll();
+    });
+
+    // Theme toggle — shared logic
+    function applyTheme(next) {
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme-preference', next);
+        updateThemeLabel();
+    }
+
+    function updateThemeLabel() {
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        const label = document.getElementById('theme-toggle-label');
+        if (label) label.textContent = current === 'dark' ? '☀  Switch to Light Theme' : '🌙  Switch to Dark Theme';
+        const icon = document.getElementById('theme-btn-icon');
+        if (icon) icon.textContent = current === 'dark' ? '☀' : '🌙';
+    }
+
+    // View-menu item
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function (e) {
+            e.preventDefault();
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+            closeAll();
+        });
+    }
+
+    // Menubar button (always visible)
+    const themeBtn = document.getElementById('theme-btn');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+    }
+
+    updateThemeLabel();
+
+    // Help → About Onesimus (plain fetch, so closeAll is in scope)
+    const aboutLink = document.getElementById('action-about');
+    if (aboutLink) {
+        aboutLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            closeAll();
+            fetch('{% url "common:about" %}', { credentials: 'same-origin' })
+                .then(function (r) { return r.ok ? r.text() : Promise.reject(r.status); })
+                .then(function (html) {
+                    document.getElementById('overlay-dialog-content').innerHTML = html;
+                    overlayDialog.open('About Onesimus');
+                })
+                .catch(function () {
+                    overlayToast.show('Could not load About dialog', 'error');
+                });
+        });
+    }
+})();
+</script>

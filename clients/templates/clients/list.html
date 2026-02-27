@@ -1,0 +1,379 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block title %}Clients - Onesimus{% endblock %}
+
+{% block content %}
+<div class="clients-layout">
+
+    <!-- ── Filter bar ──────────────────────────────────────────────── -->
+    <div class="clients-filterbar">
+        <form method="get" id="filter-form" class="clients-filterbar-form">
+            <label class="clients-filterbar-label">Client:</label>
+            <input type="text" name="name" class="form-control form-control-sm clients-filterbar-input"
+                   value="{{ name_filter }}" placeholder="">
+
+            <label class="clients-filterbar-label">Status:</label>
+            <select name="status" class="form-control form-control-sm clients-filterbar-select"
+                    onchange="this.form.submit()">
+                <option value="all" {% if not status_filter or status_filter == 'all' %}selected{% endif %}>All</option>
+                {% for code, label in status_choices %}
+                <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <div class="clients-filterbar-spacer"></div>
+
+            <label class="clients-filterbar-item">
+                <input type="checkbox" id="auto-refresh-cb"> Auto
+            </label>
+            <button type="submit" class="btn btn-primary btn-sm">Refresh</button>
+        </form>
+    </div>
+
+    <!-- ── Statistics ─────────────────────────────────────────────── -->
+    <div class="clients-stats-bar">
+        <span class="clients-stats-title">Statistics</span>
+        <span class="clients-stats-item">
+            <strong>Total:</strong> {{ total }}
+        </span>
+        <span class="clients-stats-item clients-stats-online">
+            <strong>Online:</strong> {{ online_count }}
+        </span>
+        <span class="clients-stats-item clients-stats-offline">
+            <strong>Offline:</strong> {{ offline_count }}
+        </span>
+        {% if unknown_count %}
+        <span class="clients-stats-item clients-stats-unknown">
+            <strong>Unknown:</strong> {{ unknown_count }}
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- ── Table ──────────────────────────────────────────────────── -->
+    <div class="clients-table-wrapper">
+        <table class="table table-striped table-sm clients-table">
+            <thead>
+                <tr>
+                    {% with s=sort_col d=sort_dir %}
+                    <th class="clients-th-sortable{% if s == 'name' %} sorted-{{ d }}{% endif %}">
+                        <a href="?sort=name&dir={% if s == 'name' and d == 'asc' %}desc{% else %}asc{% endif %}{% if name_filter %}&name={{ name_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Name{% if s == 'name' %} {% if d == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </a>
+                    </th>
+                    <th class="clients-th-sortable{% if s == 'address' %} sorted-{{ d }}{% endif %}">
+                        <a href="?sort=address&dir={% if s == 'address' and d == 'asc' %}desc{% else %}asc{% endif %}{% if name_filter %}&name={{ name_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Address
+                        </a>
+                    </th>
+                    <th class="clients-th-num clients-th-sortable{% if s == 'port' %} sorted-{{ d }}{% endif %}">
+                        <a href="?sort=port&dir={% if s == 'port' and d == 'asc' %}desc{% else %}asc{% endif %}{% if name_filter %}&name={{ name_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Port
+                        </a>
+                    </th>
+                    <th class="clients-th-sortable{% if s == 'status' %} sorted-{{ d }}{% endif %}">
+                        <a href="?sort=status&dir={% if s == 'status' and d == 'asc' %}desc{% else %}asc{% endif %}{% if name_filter %}&name={{ name_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Status
+                        </a>
+                    </th>
+                    <th>Operating System</th>
+                    <th class="clients-th-sortable{% if s == 'version' %} sorted-{{ d }}{% endif %}">
+                        <a href="?sort=version&dir={% if s == 'version' and d == 'asc' %}desc{% else %}asc{% endif %}{% if name_filter %}&name={{ name_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Version
+                        </a>
+                    </th>
+                    <th class="clients-th-sortable{% if s == 'last_connection' %} sorted-{{ d }}{% endif %}">
+                        <a href="?sort=last_connection&dir={% if s == 'last_connection' and d == 'asc' %}desc{% else %}asc{% endif %}{% if name_filter %}&name={{ name_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Last Connection
+                        </a>
+                    </th>
+                    <th class="clients-th-num clients-th-sortable{% if s == 'jobs' %} sorted-{{ d }}{% endif %}">
+                        <a href="?sort=jobs&dir={% if s == 'jobs' and d == 'asc' %}desc{% else %}asc{% endif %}{% if name_filter %}&name={{ name_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Jobs
+                        </a>
+                    </th>
+                    <th class="clients-th-num clients-th-sortable{% if s == 'total_data' %} sorted-{{ d }}{% endif %}">
+                        <a href="?sort=total_data&dir={% if s == 'total_data' and d == 'asc' %}desc{% else %}asc{% endif %}{% if name_filter %}&name={{ name_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Total Data
+                        </a>
+                    </th>
+                    {% endwith %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                <tr class="client-row"
+                    data-client-id="{{ client.id }}"
+                    onclick="selectClientRow(this)"
+                    ondblclick="openClientDetail({{ client.id }})"
+                    style="cursor:pointer">
+                    <td>{{ client.name }}</td>
+                    <td class="text-mono text-sm">{{ client.address|default:"" }}</td>
+                    <td class="clients-td-num text-mono text-sm">{% if client.port %}{{ client.port }}{% endif %}</td>
+                    <td>
+                        <span class="client-status-badge client-status-{{ client.status }}">
+                            {{ client.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-sm">{{ client.os_name }}</td>
+                    <td class="text-sm">{{ client.version }}</td>
+                    <td class="text-mono text-sm">
+                        {% if client.last_backup %}
+                            {{ client.last_backup|date:"d.m.Y H:i" }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </td>
+                    <td class="clients-td-num">{{ client.job_count }}</td>
+                    <td class="clients-td-num text-sm">
+                        {% if client.total_backed %}
+                            {{ client.total_backed|filesizeformat }}
+                        {% else %}
+                            0 B
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted p-lg">No clients found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div><!-- /.clients-layout -->
+
+<!-- Qt-style context menu (hidden until right-click) -->
+<ul id="client-ctx-menu" class="ctx-menu" role="menu">
+    <li class="ctx-item" data-action="open">Open Details</li>
+    <li class="ctx-sep" role="separator"></li>
+    <li class="ctx-item" data-action="copy-name">Copy Name</li>
+    <li class="ctx-item" data-action="copy-addr">Copy Address</li>
+    <li class="ctx-sep" role="separator"></li>
+    <li class="ctx-item ctx-item-danger" data-action="refresh">Refresh Status</li>
+</ul>
+
+<style>
+/* ── Qt context menu ──────────────────────────────────────────── */
+.ctx-menu {
+    position: fixed;
+    display: none;
+    z-index: 2000;
+    margin: 0;
+    padding: 3px 0;
+    list-style: none;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.18);
+    border-radius: 2px;
+    min-width: 160px;
+    font-size: var(--text-sm);
+}
+.ctx-menu.open { display: block; }
+.ctx-item {
+    padding: 4px 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--color-text);
+    user-select: none;
+}
+.ctx-item:hover { background: var(--color-primary); color: #fff; }
+.ctx-item-danger { color: var(--color-status-error); }
+.ctx-item-danger:hover { background: var(--color-status-error); color: #fff; }
+.ctx-sep {
+    height: 0;
+    border-top: 1px solid var(--color-border);
+    margin: 3px 0;
+}
+
+/* ── Clients page layout ───────────────────────────────────────── */
+.layout-content { display: flex; flex-direction: column; overflow: hidden; }
+
+.clients-layout {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ── Filter bar ───────────────────────────────────────────────── */
+.clients-filterbar {
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-bg-secondary);
+    padding: 4px 10px;
+}
+.clients-filterbar-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.clients-filterbar-label {
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    color: var(--color-text);
+}
+.clients-filterbar-input {
+    width: 160px;
+}
+.clients-filterbar-select {
+    width: 110px;
+}
+.clients-filterbar-spacer { flex: 1; }
+.clients-filterbar-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-sm);
+    white-space: nowrap;
+}
+
+/* ── Statistics bar ───────────────────────────────────────────── */
+.clients-stats-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 4px 10px 6px;
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+}
+.clients-stats-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-right: 6px;
+}
+.clients-stats-item {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+.clients-stats-online { color: var(--color-status-success); }
+.clients-stats-offline { color: var(--color-text-muted); }
+.clients-stats-unknown { color: var(--color-status-warning); }
+
+/* ── Table ────────────────────────────────────────────────────── */
+.clients-table-wrapper {
+    flex: 1;
+    overflow: auto;
+}
+.clients-table {
+    min-width: 900px;
+}
+.clients-th-sortable a {
+    color: var(--color-text);
+    text-decoration: none;
+    display: block;
+}
+.clients-th-sortable a:hover { color: var(--color-primary); }
+.clients-th-sortable.sorted-asc a,
+.clients-th-sortable.sorted-desc a { color: var(--color-primary); }
+.clients-th-num { text-align: right; }
+.clients-td-num { text-align: right; }
+
+.client-row:hover { background-color: var(--color-bg-hover) !important; }
+.client-row.selected { background-color: var(--color-selection) !important; color: var(--color-text-inverse) !important; }
+
+/* Status badges */
+.client-status-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    border: 1px solid transparent;
+}
+.client-status-online  { background: rgba(76, 175, 80, 0.18); color: #2e7d32; border-color: rgba(76,175,80,0.35); }
+.client-status-offline { background: rgba(150,150,150,0.15);  color: var(--color-text-muted); border-color: rgba(150,150,150,0.3); }
+.client-status-unknown { background: rgba(255, 193, 7, 0.18); color: #7c5d00; border-color: rgba(255,193,7,0.4); }
+.client-status-disabled   { background: rgba(244, 67, 54, 0.12); color: var(--color-status-error); border-color: rgba(244,67,54,0.3); }
+.client-status-connecting { background: rgba(33, 150, 243, 0.15); color: var(--color-status-running); border-color: rgba(33,150,243,0.35); }
+</style>
+
+<script>
+let selectedClientRow = null;
+
+function selectClientRow(row) {
+    if (selectedClientRow) selectedClientRow.classList.remove('selected');
+    row.classList.add('selected');
+    selectedClientRow = row;
+}
+
+function openClientDetail(clientId) {
+    const name = _ctxClientName || (selectedClientRow ? selectedClientRow.querySelector('td')?.textContent.trim() : '');
+    fetch('/clients/' + clientId + '/', { credentials: 'same-origin' })
+        .then(r => r.ok ? r.text() : Promise.reject(r.status))
+        .then(html => {
+            document.getElementById('overlay-dialog-content').innerHTML = html;
+            overlayDialog.open('Client Details' + (name ? ' \u2014 ' + name : ''));
+        })
+        .catch(() => overlayToast.show('Could not load client details', 'error'));
+}
+
+// ── Qt context menu ────────────────────────────────────────────
+const ctxMenu = document.getElementById('client-ctx-menu');
+let _ctxClientId   = null;
+let _ctxClientName = null;
+let _ctxClientAddr = null;
+
+function ctxClose() { ctxMenu.classList.remove('open'); }
+
+document.querySelector('.clients-table tbody').addEventListener('contextmenu', function (e) {
+    const row = e.target.closest('tr.client-row');
+    if (!row) return;
+    e.preventDefault();
+
+    // Select the row
+    selectClientRow(row);
+    _ctxClientId   = row.dataset.clientId;
+    _ctxClientName = row.cells[0]?.textContent.trim();
+    _ctxClientAddr = row.cells[1]?.textContent.trim();
+
+    // Position menu
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let x = e.clientX, y = e.clientY;
+    ctxMenu.classList.add('open');
+    const mw = ctxMenu.offsetWidth, mh = ctxMenu.offsetHeight;
+    if (x + mw > vw) x = vw - mw - 4;
+    if (y + mh > vh) y = vh - mh - 4;
+    ctxMenu.style.left = x + 'px';
+    ctxMenu.style.top  = y + 'px';
+});
+
+ctxMenu.addEventListener('click', function (e) {
+    const item = e.target.closest('.ctx-item');
+    if (!item) return;
+    ctxClose();
+    const action = item.dataset.action;
+    if (action === 'open') {
+        openClientDetail(parseInt(_ctxClientId));
+    } else if (action === 'copy-name') {
+        navigator.clipboard.writeText(_ctxClientName || '').then(
+            () => overlayToast.show('Name copied', 'info'),
+            () => overlayToast.show('Copy not available', 'error')
+        );
+    } else if (action === 'copy-addr') {
+        navigator.clipboard.writeText(_ctxClientAddr || '').then(
+            () => overlayToast.show('Address copied', 'info'),
+            () => overlayToast.show('Copy not available', 'error')
+        );
+    } else if (action === 'refresh') {
+        location.reload();
+    }
+});
+
+document.addEventListener('click',  ctxClose);
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') ctxClose(); });
+
+// Auto-refresh
+let refreshTimer = null;
+document.getElementById('auto-refresh-cb').addEventListener('change', function () {
+    clearInterval(refreshTimer);
+    if (this.checked)
+        refreshTimer = setInterval(() => location.reload(), 60000);
+});
+</script>
+{% endblock %}

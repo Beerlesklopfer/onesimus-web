@@ -1,0 +1,9 @@
+# Onesimus Web Application - Minimal Requirements
+# Only direct dependencies (pip install will handle sub-dependencies)
+
+Django==6.0.2
+channels==4.3.2
+daphne==4.2.1
+django-htmx==1.27.0
+python-bareos==25.0.2
+python-dotenv==1.2.1

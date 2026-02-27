@@ -1,0 +1,140 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Onesimus - Backup Management{% endblock %}</title>
+
+    <!-- Anti-flash: apply saved theme before CSS renders -->
+    <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.setAttribute('data-theme',t);})()</script>
+
+    <!-- Font Awesome (local) -->
+    <link rel="stylesheet" href="{% static 'common/vendors/fontawesome/css/all.min.css' %}">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'common/css/variables.css' %}">
+    <link rel="stylesheet" href="{% static 'common/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'common/css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'common/css/layout.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'common/icons/onesimus.svg' %}">
+</head>
+<body>
+    <div class="layout-main">
+        {% include 'common/navbar.html' %}
+        {% include 'common/toolbar.html' %}
+        {% include 'common/sidebar.html' %}
+
+        <main class="layout-content">
+            {% block content %}
+                <p>No content provided.</p>
+            {% endblock %}
+        </main>
+
+        {% include 'common/footer.html' %}
+    </div>
+
+    <!-- ── Overlay: center dialog / wizard ───────────────────────────── -->
+    <div id="overlay-dialog" class="overlay-dialog" aria-hidden="true">
+        <div class="overlay-dialog-backdrop" onclick="overlayDialog.close()"></div>
+        <div class="overlay-dialog-box">
+            <div class="overlay-dialog-header">
+                <span id="overlay-dialog-title" class="overlay-dialog-title"></span>
+                <button class="overlay-close-btn" onclick="overlayDialog.close()">✕</button>
+            </div>
+            <div id="overlay-dialog-content" class="overlay-dialog-content"></div>
+        </div>
+    </div>
+
+    <!-- ── Overlay: right-side flyout panel ──────────────────────────── -->
+    <div id="overlay-panel" class="overlay-panel" aria-hidden="true">
+        <div class="overlay-panel-header">
+            <span id="overlay-panel-title">Details</span>
+            <button class="overlay-close-btn" onclick="overlayPanel.close()">✕</button>
+        </div>
+        <div id="overlay-panel-content"></div>
+    </div>
+
+    <!-- ── Overlay: toast notifications ──────────────────────────────── -->
+    <div id="overlay-toast" class="overlay-toast" aria-live="polite"></div>
+
+    <!-- Scripts -->
+    <script src="{% static 'common/js/htmx.min.js' %}"></script>
+    <script src="{% static 'common/js/ws-manager.js' %}"></script>
+    <script src="{% static 'common/js/common.js' %}"></script>
+    <script src="{% static 'common/js/settings.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+
+    <!-- HTMX Configuration -->
+    <script>
+        htmx.config.timeout = 10000;
+        htmx.config.defaultIndicatorStyle = 'spinner';
+        htmx.config.refreshOnHistoryMiss = true;
+    </script>
+
+    <!-- Overlay API (usable by all pages) -->
+    <script>
+        /**
+         * Re-execute <script> tags inside a container element.
+         * Required because innerHTML insertion does NOT run scripts.
+         */
+        function runInlineScripts(container) {
+            container.querySelectorAll('script').forEach(function (old) {
+                // Skip data scripts (application/json, etc.) — only run JS
+                const t = (old.type || '').toLowerCase();
+                if (t && t !== 'text/javascript' && t !== 'module') return;
+                const s = document.createElement('script');
+                s.textContent = old.textContent;
+                old.replaceWith(s);
+            });
+        }
+
+        const overlayDialog = {
+            el: document.getElementById('overlay-dialog'),
+            open(title) {
+                if (title !== undefined) {
+                    document.getElementById('overlay-dialog-title').textContent = title;
+                }
+                this.el.classList.add('open');
+                this.el.setAttribute('aria-hidden', 'false');
+                // Execute any scripts that were injected via innerHTML
+                runInlineScripts(document.getElementById('overlay-dialog-content'));
+            },
+            close() {
+                this.el.classList.remove('open');
+                this.el.setAttribute('aria-hidden', 'true');
+                // clear content so old dialog doesn't flash on next open
+                setTimeout(() => {
+                    if (!this.el.classList.contains('open')) {
+                        document.getElementById('overlay-dialog-content').innerHTML = '';
+                        document.getElementById('overlay-dialog-title').textContent = '';
+                    }
+                }, 300);
+            }
+        };
+        const overlayPanel = {
+            el: document.getElementById('overlay-panel'),
+            open(title) {
+                if (title) document.getElementById('overlay-panel-title').textContent = title;
+                this.el.classList.add('open'); this.el.setAttribute('aria-hidden', 'false');
+            },
+            close() { this.el.classList.remove('open'); this.el.setAttribute('aria-hidden', 'true'); }
+        };
+        const overlayToast = {
+            el: document.getElementById('overlay-toast'),
+            show(msg, type, duration) {
+                const t = document.createElement('div');
+                t.className = 'toast toast-' + (type || 'info');
+                t.textContent = msg;
+                this.el.appendChild(t);
+                setTimeout(() => t.remove(), duration || 4000);
+            }
+        };
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { overlayDialog.close(); overlayPanel.close(); }
+        });
+    </script>
+</body>
+</html>
