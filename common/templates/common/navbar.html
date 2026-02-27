@@ -112,6 +112,7 @@
     function applyTheme(next) {
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('theme-preference', next);
+        document.cookie = 'theme=' + encodeURIComponent(next) + '; path=/; max-age=31536000; SameSite=Lax';
         updateThemeLabel();
     }
 

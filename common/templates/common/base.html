@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Onesimus - Backup Management{% endblock %}</title>
 
-    <!-- Anti-flash: apply saved theme before CSS renders -->
-    <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.setAttribute('data-theme',t);})()</script>
+    <!-- Anti-flash: apply saved theme before CSS renders (cookie first, localStorage fallback) -->
+    <script>(function(){function gc(n){var m=document.cookie.match('(?:^|;)\\s*'+n+'=([^;]*)');return m?decodeURIComponent(m[1]):null;}var t=gc('theme')||localStorage.getItem('theme-preference');if(t)document.documentElement.setAttribute('data-theme',t);})()</script>
 
     <!-- Font Awesome (local) -->
     <link rel="stylesheet" href="{% static 'common/vendors/fontawesome/css/all.min.css' %}">
