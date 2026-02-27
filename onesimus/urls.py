@@ -16,13 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.decorators import login_required
 from django.urls import path, include
 from django.views.generic import TemplateView
 from common.views import logout_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', TemplateView.as_view(template_name='common/base.html'), name='home'),
+    path('', login_required(TemplateView.as_view(template_name='common/base.html')), name='home'),
     path('jobs/', include('jobs.urls', namespace='jobs')),
     path('clients/', include('clients.urls', namespace='clients')),
     path('schedules/', include('schedules.urls', namespace='schedules')),
