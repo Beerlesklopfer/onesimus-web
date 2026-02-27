@@ -1,8 +1,14 @@
 # ── Onesimus Web — Makefile ───────────────────────────────────────────────────
 #
+# First-time server setup:
+#   git clone <repo> /srv/onesimus-web && cd /srv/onesimus-web
+#   sudo make sysdeps          (libpq-dev, python3-dev)
+#   sudo make install-system   (creates /srv/onesimus-web, /etc/onesimus/, systemd, nginx)
+#   make install migrate static superuser
+#   sudo make start
+#
 # Development:   make dev
-# Production:    make install && make migrate && make static
-# Deployment:    make deploy       (install + migrate + static + restart)
+# Re-deploy:     make deploy       (install + migrate + static + restart)
 # Service:       make start / stop / restart / status / logs
 #
 # Assumptions:
@@ -48,7 +54,19 @@ install: venv                      ## Install production dependencies
 install-dev: venv                  ## Install development dependencies
 	$(PIP) install -q -r requirements-dev.txt
 
-install-system:                    ## Install systemd unit + nginx config (requires sudo)
+install-system:                    ## Create /srv/onesimus-web, install systemd unit + nginx (requires sudo)
+	@echo "  [dir] creating /srv/onesimus-web …"
+	sudo mkdir -p /srv/onesimus-web
+	sudo chown www-data:www-data /srv/onesimus-web
+	@echo "  [env] creating /etc/onesimus/ …"
+	sudo mkdir -p /etc/onesimus
+	@if [ ! -f /etc/onesimus/onesimus.env ]; then \
+		printf 'DJANGO_SECRET_KEY=change-me-to-a-random-50-char-string\nDJANGO_ALLOWED_HOSTS=localhost,127.0.0.1\nDJANGO_DEBUG=false\nDATABASE_URL=sqlite:////srv/onesimus-web/db.sqlite3\n' \
+			| sudo tee /etc/onesimus/onesimus.env > /dev/null; \
+		echo "  [env] template written → /etc/onesimus/onesimus.env (edit before starting!)"; \
+	else \
+		echo "  [env] /etc/onesimus/onesimus.env already exists, skipping."; \
+	fi
 	@echo "  [systemd] installing contrib/onesimus.service …"
 	sudo cp contrib/onesimus.service /etc/systemd/system/$(SERVICE).service
 	sudo systemctl daemon-reload
@@ -62,14 +80,16 @@ install-system:                    ## Install systemd unit + nginx config (requi
 	@echo "  ┌─────────────────────────────────────────────────────────────┐"
 	@echo "  │  Manual steps required:                                     │"
 	@echo "  │                                                             │"
-	@echo "  │  1) Edit server_name in $(NGINX_AVAIL)"
+	@echo "  │  1) Edit /etc/onesimus/onesimus.env (SECRET_KEY, DB, …)    │"
 	@echo "  │                                                             │"
-	@echo "  │  2) Enable the nginx site:                                  │"
+	@echo "  │  2) Edit server_name in $(NGINX_AVAIL)"
+	@echo "  │                                                             │"
+	@echo "  │  3) Enable the nginx site:                                  │"
 	@echo "  │       sudo ln -s $(NGINX_AVAIL) \\"
 	@echo "  │                 /etc/nginx/sites-enabled/$(SERVICE)         │"
 	@echo "  │       sudo nginx -t && sudo systemctl reload nginx          │"
 	@echo "  │                                                             │"
-	@echo "  │  3) Obtain TLS certificate:                                 │"
+	@echo "  │  4) Obtain TLS certificate:                                 │"
 	@echo "  │       sudo certbot --nginx -d <your-domain>                 │"
 	@echo "  └─────────────────────────────────────────────────────────────┘"
 	@echo ""
