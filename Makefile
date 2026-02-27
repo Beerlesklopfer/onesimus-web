@@ -81,7 +81,7 @@ install-system: $(DEPLOY_DIR)      ## Install systemd unit + nginx config (requi
 	@echo "  [env] creating /etc/onesimus/ …"
 	sudo mkdir -p /etc/onesimus
 	@if [ ! -f /etc/onesimus/onesimus.env ]; then \
-		printf 'DJANGO_SECRET_KEY=change-me-to-a-random-50-char-string\nDJANGO_ALLOWED_HOSTS=localhost,127.0.0.1\nDJANGO_DEBUG=false\nDATABASE_URL=sqlite:////srv/onesimus-web/db.sqlite3\n' \
+		printf 'DJANGO_SECRET_KEY=change-me-to-a-random-50-char-string\nDJANGO_ALLOWED_HOSTS=localhost,127.0.0.1\nDJANGO_CSRF_TRUSTED_ORIGINS=https://your-domain.example.com\nDJANGO_DEBUG=false\nDATABASE_URL=sqlite:////srv/onesimus-web/db.sqlite3\n' \
 			| sudo tee /etc/onesimus/onesimus.env > /dev/null; \
 		echo "  [env] template written → /etc/onesimus/onesimus.env (edit before starting!)"; \
 	else \

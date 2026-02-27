@@ -28,6 +28,15 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() not in ('false', '0', 'no
 
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# Django 4.0+: must list every scheme+host that POSTs to this server over HTTPS
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    'DJANGO_CSRF_TRUSTED_ORIGINS', 'http://localhost:8888'
+).split(',')
+
+# Harden cookies in production (non-debug) mode
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE    = not DEBUG
+
 
 # Application definition
 
