@@ -10,8 +10,10 @@ from pathlib import Path
 
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.templatetags.static import static
+from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_http_methods
 
 from .models import Setting, UserPreference
@@ -99,6 +101,50 @@ def about_view(request):
         'django_version': django.get_version(),
         'python_version': f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}',
     })
+
+
+# ── PWA ───────────────────────────────────────────────────────────────────
+
+@cache_control(max_age=86400)
+@require_http_methods(['GET'])
+def manifest_view(request):
+    build = _BUILD_NUMBER_FILE.read_text().strip() if _BUILD_NUMBER_FILE.exists() else '0'
+    data = {
+        'name': 'Onesimus',
+        'short_name': 'Onesimus',
+        'description': 'Modern Web Interface for Bareos Backup',
+        'start_url': '/jobs/',
+        'display': 'standalone',
+        'background_color': '#1a1a2e',
+        'theme_color': '#0d6efd',
+        'orientation': 'any',
+        'icons': [
+            {
+                'src': request.build_absolute_uri(static('common/icons/icon-192.png')),
+                'sizes': '192x192',
+                'type': 'image/png',
+                'purpose': 'any maskable',
+            },
+            {
+                'src': request.build_absolute_uri(static('common/icons/icon-512.png')),
+                'sizes': '512x512',
+                'type': 'image/png',
+                'purpose': 'any maskable',
+            },
+        ],
+    }
+    return JsonResponse(data, content_type='application/manifest+json')
+
+
+@cache_control(max_age=0, no_cache=True, must_revalidate=True)
+@require_http_methods(['GET'])
+def service_worker_view(request):
+    build = _BUILD_NUMBER_FILE.read_text().strip() if _BUILD_NUMBER_FILE.exists() else '0'
+    content = render(request, 'common/sw.js', {
+        'cache_version': build,
+        'static_url': request.build_absolute_uri(static('')[:-1]),  # strip trailing slash
+    })
+    return HttpResponse(content.content, content_type='application/javascript')
 
 
 # ── Global Settings (read-only for frontend) ──────────────────────────────

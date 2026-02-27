@@ -22,9 +22,11 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.urls import path, include
 from django.views.generic import TemplateView
-from common.views import logout_view
+from common.views import logout_view, manifest_view, service_worker_view
 
 urlpatterns = [
+    path('manifest.json', manifest_view, name='pwa-manifest'),
+    path('sw.js',         service_worker_view, name='pwa-sw'),
     path('admin/', admin.site.urls),
     path('', login_required(TemplateView.as_view(template_name='common/base.html')), name='home'),
     path('jobs/', include('jobs.urls', namespace='jobs')),

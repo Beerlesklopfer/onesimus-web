@@ -20,6 +20,13 @@
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{% static 'common/icons/onesimus.svg' %}">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0d6efd">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{% static 'common/icons/icon-192.png' %}">
 </head>
 <body>
     <div class="layout-main">
@@ -136,6 +143,14 @@
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') { overlayDialog.close(); overlayPanel.close(); }
         });
+    </script>
+
+    <!-- PWA: register service worker -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .catch(function () {});
+    }
     </script>
 </body>
 </html>
