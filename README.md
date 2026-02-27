@@ -304,7 +304,7 @@ Future improvements:
 
 ## License
 
-Same as Onesimus Qt app - GPL-3.0
+MIT License — © 2025–2026 Jörg Bernau
 
 ## Support
 
