@@ -58,12 +58,33 @@
     overflow: hidden;
 }
 
-.st-sb-section {
-    display: flex; flex-direction: column;
-    overflow: hidden;
+/* Top and bottom panes — heights controlled by JS splitter */
+.st-sb-top    { overflow-y: auto; overflow-x: hidden; flex-shrink: 0; min-height: 40px; }
+.st-sb-bottom { overflow-y: auto; overflow-x: hidden; flex-shrink: 0; min-height: 40px; }
+
+/* Splitter handle */
+.st-sb-splitter {
+    flex-shrink: 0;
+    height: 5px;
+    background: var(--color-border);
+    cursor: ns-resize;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none;
+    transition: background 120ms;
 }
-.st-sb-top    { flex: 1 1 auto; min-height: 80px; overflow-y: auto; }
-.st-sb-bottom { flex: 0 0 auto; max-height: 55%; border-top: 1px solid var(--color-border); overflow-y: auto; }
+.st-sb-splitter:hover,
+.st-sb-splitter.is-dragging { background: var(--color-statusbar-bg); }
+.st-sb-splitter::after {
+    content: '';
+    width: 22px; height: 2px;
+    border-radius: 1px;
+    background: var(--color-text-muted);
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity 120ms;
+}
+.st-sb-splitter:hover::after,
+.st-sb-splitter.is-dragging::after { opacity: 1; }
 
 .st-sb-head {
     position: sticky; top: 0;
@@ -108,9 +129,33 @@
 .st-pi-name { font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-pi-vol  { font-size: 10px; color: var(--color-text-muted); flex-shrink: 0; }
 
+/* Horizontal splitter between sidebar and panel */
+.st-hsplitter {
+    flex-shrink: 0;
+    width: 5px;
+    background: var(--color-border);
+    cursor: ew-resize;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none;
+    transition: background 120ms;
+}
+.st-hsplitter:hover,
+.st-hsplitter.is-dragging { background: var(--color-statusbar-bg); }
+.st-hsplitter::after {
+    content: '';
+    width: 2px; height: 22px;
+    border-radius: 1px;
+    background: var(--color-text-muted);
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity 120ms;
+}
+.st-hsplitter:hover::after,
+.st-hsplitter.is-dragging::after { opacity: 1; }
+
 /* ── Stats panel ────────────────────────────────────────────────── */
 .st-panel {
-    flex: 1; min-width: 0;
+    flex-shrink: 0; min-width: 0;
     overflow-y: auto;
     background: var(--color-bg);
 }
@@ -172,8 +217,11 @@
                 {% endfor %}
             </div>
 
+            <!-- Vertical splitter -->
+            <div class="st-sb-splitter" id="st-vsplitter" title="Drag to resize"></div>
+
             <!-- Pools (bottom, HTMX-loaded) -->
-            <div class="st-sb-bottom">
+            <div class="st-sb-bottom" id="st-sb-bottom">
                 <div class="st-sb-head" id="pool-list-head">
                     Pools{% if selected_storage %} · {{ selected_storage.name }}{% endif %}
                 </div>
@@ -183,6 +231,9 @@
             </div>
 
         </div>
+
+        <!-- Horizontal splitter -->
+        <div class="st-hsplitter" id="st-hsplitter" title="Drag to resize"></div>
 
         <!-- ── Stats panel ───────────────────────────────────────────────── -->
         <div class="st-panel" id="st-stats-panel">
@@ -197,18 +248,96 @@
 </div>
 
 <script>
+/* ── HTMX helpers ──────────────────────────────────────────────── */
 function loadStorageStats(pk) {
     htmx.ajax('GET', `/storage/storage/${pk}/stats/`, {target: '#st-stats-panel', swap: 'innerHTML'});
     document.getElementById('pool-list-head').textContent = 'Pools · loading…';
 }
-function loadPoolStats(pk, poolName) {
+function loadPoolStats(pk) {
     htmx.ajax('GET', `/storage/pool/${pk}/stats/`, {target: '#st-stats-panel', swap: 'innerHTML'});
 }
-// After HTMX loads pool list, update the header
 document.getElementById('pool-list').addEventListener('htmx:afterSwap', function() {
     const active = document.querySelector('.st-storage-item.active .st-si-name');
     const head   = document.getElementById('pool-list-head');
     if (active && head) head.textContent = 'Pools · ' + active.textContent.trim();
+});
+
+/* ── Splitter helper ───────────────────────────────────────────── */
+function makeSplitter({ handle, primary, secondary, direction, storageKey, defaultRatio, minPx }) {
+    // direction: 'vertical'  → resizes height of primary (top)
+    //            'horizontal' → resizes width  of primary (left)
+    const prop   = direction === 'vertical'   ? 'height' : 'width';
+    const coord  = direction === 'vertical'   ? 'clientY' : 'clientX';
+    const getSize = el => direction === 'vertical' ? el.offsetHeight : el.offsetWidth;
+
+    function applyRatio(ratio) {
+        const splitterSz = getSize(handle);
+        const container  = primary.parentElement;
+        const total      = (direction === 'vertical' ? container.clientHeight : container.clientWidth)
+                           - splitterSz;
+        const primaryPx  = Math.max(minPx, Math.min(total - minPx, Math.round(total * ratio)));
+        primary.style[prop]   = primaryPx + 'px';
+        secondary.style[prop] = (total - primaryPx) + 'px';
+    }
+
+    // Restore from localStorage
+    const saved = parseFloat(localStorage.getItem(storageKey));
+    applyRatio(isNaN(saved) ? defaultRatio : saved);
+
+    handle.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const startCoord  = e[coord];
+        const startPrimPx = getSize(primary);
+        const splitterSz  = getSize(handle);
+        const container   = primary.parentElement;
+        const total       = (direction === 'vertical' ? container.clientHeight : container.clientWidth)
+                            - splitterSz;
+
+        handle.classList.add('is-dragging');
+        document.body.style.cursor     = direction === 'vertical' ? 'ns-resize' : 'ew-resize';
+        document.body.style.userSelect = 'none';
+
+        function onMove(e) {
+            const delta   = e[coord] - startCoord;
+            const newPx   = Math.max(minPx, Math.min(total - minPx, startPrimPx + delta));
+            primary.style[prop]   = newPx + 'px';
+            secondary.style[prop] = (total - newPx) + 'px';
+        }
+
+        function onUp() {
+            const ratio = getSize(primary) / total;
+            localStorage.setItem(storageKey, ratio);
+            handle.classList.remove('is-dragging');
+            document.body.style.cursor     = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup',  onUp);
+        }
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onUp);
+    });
+}
+
+/* ── Init both splitters ───────────────────────────────────────── */
+makeSplitter({
+    handle:       document.getElementById('st-vsplitter'),
+    primary:      document.querySelector('.st-sb-top'),
+    secondary:    document.getElementById('st-sb-bottom'),
+    direction:    'vertical',
+    storageKey:   'st-vsplit',
+    defaultRatio: 0.45,
+    minPx:        40,
+});
+
+makeSplitter({
+    handle:       document.getElementById('st-hsplitter'),
+    primary:      document.querySelector('.st-sidebar'),
+    secondary:    document.getElementById('st-stats-panel'),
+    direction:    'horizontal',
+    storageKey:   'st-hsplit',
+    defaultRatio: 0.25,
+    minPx:        150,
 });
 </script>
 {% endblock %}
