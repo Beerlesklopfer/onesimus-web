@@ -114,6 +114,33 @@
     </div>
     {% endif %}
 
+    <!-- Throughput trend -->
+    {% if trend_svg %}
+    <div class="sp-section">
+        <div class="sp-section-head" style="display:flex;justify-content:space-between;align-items:baseline;">
+            <span>Throughput trend (30 days)</span>
+            <span style="font-size:9px;color:var(--color-text-muted);font-weight:normal;text-transform:none;letter-spacing:0;">peak {{ trend_max_fmt }}/day</span>
+        </div>
+        <div style="border-radius:3px;background:var(--color-bg-tertiary);overflow:hidden;padding:4px 0 0;">
+            {{ trend_svg|safe }}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--color-text-muted);margin-top:2px;padding:0 2px;">
+            <span>{{ trend_days.0|date:"d.m." }}</span>
+            <span>{{ trend_days|last|date:"d.m." }}</span>
+        </div>
+        {% if trend_series|length > 1 %}
+        <div class="sp-legend" style="margin-top:5px;">
+            {% for s in trend_series %}
+            <span class="sp-legend-item">
+                <span class="sp-legend-dot" style="background:{{ s.color }};"></span>
+                {{ s.name }}
+            </span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <!-- Recent jobs -->
     {% if recent_jobs %}
     <div class="sp-section">
