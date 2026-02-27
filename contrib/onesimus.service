@@ -34,7 +34,7 @@ SyslogIdentifier=onesimus
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths=/srv/onesimus-web
+ReadWritePaths=/srv/onesimus-web /var/log/onesimus
 
 [Install]
 WantedBy=multi-user.target

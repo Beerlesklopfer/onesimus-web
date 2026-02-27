@@ -78,6 +78,9 @@ install-dev:                       ## Install dev dependencies into local .venv
 	.venv/bin/pip install -q -r requirements-dev.txt
 
 install-system: $(DEPLOY_DIR)      ## Install systemd unit + nginx config (requires sudo)
+	@echo "  [log] creating /var/log/onesimus/ …"
+	sudo mkdir -p /var/log/onesimus
+	sudo chown www-data:www-data /var/log/onesimus
 	@echo "  [env] creating /etc/onesimus/ …"
 	sudo mkdir -p /etc/onesimus
 	@if [ ! -f /etc/onesimus/onesimus.env ]; then \

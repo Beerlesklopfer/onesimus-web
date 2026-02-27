@@ -165,7 +165,31 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Logging  —  set DJANGO_LOG_LEVEL=DEBUG in onesimus.env to get full request/auth traces
+import logging.handlers as _lh
+
 _LOG_LEVEL = os.environ.get('DJANGO_LOG_LEVEL', 'INFO').upper()
+_LOG_DIR   = '/var/log/onesimus'
+_LOG_FILE  = os.path.join(_LOG_DIR, 'onesimus.log')
+
+_handlers = ['console']
+_handler_cfg: dict = {
+    'console': {
+        'class': 'logging.StreamHandler',
+        'formatter': 'verbose',
+    },
+}
+
+# Only add file handler when the log directory exists (avoids crash during dev)
+if os.path.isdir(_LOG_DIR):
+    _handlers.append('file')
+    _handler_cfg['file'] = {
+        'class': 'logging.handlers.RotatingFileHandler',
+        'filename': _LOG_FILE,
+        'maxBytes': 10 * 1024 * 1024,   # 10 MB per file
+        'backupCount': 5,
+        'formatter': 'verbose',
+        'encoding': 'utf-8',
+    }
 
 LOGGING = {
     'version': 1,
@@ -176,24 +200,19 @@ LOGGING = {
             'style': '{',
         },
     },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-    },
+    'handlers': _handler_cfg,
     'root': {
-        'handlers': ['console'],
+        'handlers': _handlers,
         'level': _LOG_LEVEL,
     },
     'loggers': {
         'django.request': {
-            'handlers': ['console'],
+            'handlers': _handlers,
             'level': _LOG_LEVEL,
             'propagate': False,
         },
         'django.security': {
-            'handlers': ['console'],
+            'handlers': _handlers,
             'level': _LOG_LEVEL,
             'propagate': False,
         },
