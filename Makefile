@@ -1,19 +1,19 @@
 # ── Onesimus Web — Makefile ───────────────────────────────────────────────────
 #
-# First-time server setup:
+# Server setup (once):
 #   git clone <repo> /root/onesimus-web && cd /root/onesimus-web
-#   sudo make sysdeps                (libpq-dev, python3-dev)
-#   sudo make install                (creates /srv/onesimus-web, venv, pip deps)
-#   sudo make install-system         (systemd unit + nginx config, once only)
-#   make migrate static superuser
-#   sudo make start
+#   sudo make sysdeps        (libpq-dev, python3-dev — build deps)
+#   sudo make install-system (systemd unit + nginx config + env template)
+#   sudo make deploy         (creates /srv/onesimus-web, venv, pip, migrate, static, start)
+#   make superuser           (create admin user — once only)
 #
-# Re-deploy:     make deploy       (install + migrate + static + restart)
-# Service:       make start / stop / restart / status / logs
-# Development:   make dev          (uses DEPLOY_DIR=. override automatically)
+# Re-deploy after git pull:
+#   sudo make deploy         (install + migrate + static + restart)
+#
+# Service:     make start / stop / restart / status / logs
+# Development: make dev
 #
 # All production targets install into /srv/onesimus-web.
-# For local development on another machine: make dev DEPLOY_DIR=.
 
 .DEFAULT_GOAL := help
 .PHONY: help venv sysdeps install install-dev \
