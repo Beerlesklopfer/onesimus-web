@@ -12,7 +12,7 @@
 #   - daphne binary at .venv/bin/daphne
 
 .DEFAULT_GOAL := help
-.PHONY: help venv install install-dev install-prod \
+.PHONY: help venv sysdeps install install-dev install-prod \
         install-system \
         migrate static superuser \
         dev run \
@@ -29,6 +29,9 @@ NGINX_AVAIL := /etc/nginx/sites-available/$(SERVICE)
 
 
 # ── Virtualenv ────────────────────────────────────────────────────────────────
+
+sysdeps:                           ## Install system build dependencies (requires sudo)
+	sudo apt-get install -y libpq-dev python3-dev
 
 venv:                              ## Create virtualenv (if missing)
 	@if [ ! -d .venv ]; then \
