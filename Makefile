@@ -154,8 +154,9 @@ run:                               ## Run daphne from $(DEPLOY_DIR) (no setup)
 
 # ── Deployment ────────────────────────────────────────────────────────────────
 
-update: install migrate static     ## Install deps + migrate + collectstatic + restart
+update: install migrate static     ## Install deps + migrate + collectstatic + restart + nginx reload
 	$(MAKE) restart
+	@sudo nginx -t && sudo systemctl reload nginx && echo "  nginx reloaded." || echo "  nginx config error — skipped reload."
 	@echo ""
 	@echo "  Updated. Service status:"
 	@systemctl status $(SERVICE) --no-pager -l || true

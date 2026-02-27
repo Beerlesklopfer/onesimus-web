@@ -33,6 +33,9 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
     'DJANGO_CSRF_TRUSTED_ORIGINS', 'http://localhost:8888'
 ).split(',')
 
+# Trust X-Forwarded-Proto from nginx reverse proxy
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Harden cookies in production (non-debug) mode
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE    = not DEBUG
