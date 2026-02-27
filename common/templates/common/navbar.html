@@ -14,7 +14,7 @@
                     <li><a class="menubar-dropdown-item" href="#" id="action-connect">Connect…</a></li>
                     <li><a class="menubar-dropdown-item" href="#" id="action-disconnect">Disconnect</a></li>
                     <li class="menubar-sep"></li>
-                    <li><a class="menubar-dropdown-item" href="{% url 'logout' %}">Quit</a></li>
+                    <li><button class="menubar-dropdown-item" onclick="document.getElementById('logout-form').submit()">Quit</button></li>
                 </ul>
             </div>
 
@@ -54,11 +54,16 @@
                 <ul class="menubar-dropdown menubar-dropdown-right">
                     <li><a class="menubar-dropdown-item" href="#">Profile</a></li>
                     <li class="menubar-sep"></li>
-                    <li><a class="menubar-dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                    <li><button class="menubar-dropdown-item" onclick="document.getElementById('logout-form').submit()">Logout</button></li>
                 </ul>
             </div>
         </div>
     </nav>
+
+    {# Hidden POST form — Django 5+ requires POST for logout #}
+    <form id="logout-form" method="post" action="{% url 'logout' %}" style="display:none;">
+        {% csrf_token %}
+    </form>
 </header>
 
 <script>

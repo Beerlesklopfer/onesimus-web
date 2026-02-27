@@ -193,11 +193,17 @@
 
 .menubar-dropdown-item {
     display: block;
+    width: 100%;
     padding: 4px var(--space-md);
     color: var(--color-text);
     font-size: var(--text-sm);
+    font-family: var(--font-base);
     text-decoration: none;
     white-space: nowrap;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
     transition: background-color var(--transition-fast);
 }
 
