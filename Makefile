@@ -30,7 +30,8 @@ PY          := $(DEPLOY_DIR)/.venv/bin/python
 PIP         := $(DEPLOY_DIR)/.venv/bin/pip
 MANAGE      := $(PY) manage.py
 SERVICE     := onesimus
-NGINX_AVAIL := /etc/nginx/sites-available/$(SERVICE)
+NGINX_NAME  := onesimus-web
+NGINX_AVAIL := /etc/nginx/sites-available/$(NGINX_NAME)
 
 
 # ── System dependencies ───────────────────────────────────────────────────────
@@ -82,7 +83,7 @@ install-system: $(DEPLOY_DIR)      ## Install systemd unit + nginx config (requi
 	@echo "  [systemd] $(SERVICE).service enabled."
 	@echo ""
 	@echo "  [nginx] copying contrib/onesimus.nginx.conf → $(NGINX_AVAIL) …"
-	sudo cp contrib/onesimus.nginx.conf $(NGINX_AVAIL)
+	sudo cp contrib/onesimus-web.nginx.conf $(NGINX_AVAIL)
 	@echo "  [nginx] config installed."
 	@echo ""
 	@echo "  ┌─────────────────────────────────────────────────────────────┐"
