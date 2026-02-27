@@ -1,0 +1,40 @@
+[Unit]
+Description=Onesimus Web Application (Daphne/ASGI)
+Documentation=https://github.com/Beerlesklopfer/onesimus-web
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+
+# --- Working directory & virtualenv ---
+WorkingDirectory=/srv/onesimus-web
+ExecStart=/srv/onesimus-web/.venv/bin/daphne \
+    -b 127.0.0.1 \
+    -p 8888 \
+    onesimus.asgi:application
+
+# --- Environment ---
+Environment="DJANGO_DEBUG=false"
+Environment="DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1"
+# Provide secrets via EnvironmentFile, not here:
+EnvironmentFile=-/etc/onesimus/onesimus.env
+
+# --- Restart policy ---
+Restart=on-failure
+RestartSec=5s
+
+# --- Logging ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=onesimus
+
+# --- Security hardening ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/onesimus-web
+
+[Install]
+WantedBy=multi-user.target
