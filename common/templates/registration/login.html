@@ -1,0 +1,251 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — Onesimus</title>
+
+    <!-- Anti-flash: apply saved theme before CSS renders -->
+    <script>(function(){var t=localStorage.getItem('theme-preference');if(t)document.documentElement.setAttribute('data-theme',t);})()</script>
+
+    <link rel="stylesheet" href="{% static 'common/css/variables.css' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'common/icons/onesimus.svg' %}">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg);
+    font-family: 'Segoe UI', Ubuntu, sans-serif;
+    font-size: 13px;
+    color: var(--color-text);
+}
+
+/* ── Qt window chrome ──────────────────────────────────────── */
+.qt-window {
+    width: 360px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.qt-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 28px;
+    padding: 0 10px;
+    background: var(--color-bg-toolbar);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    user-select: none;
+}
+.qt-titlebar-icon { width: 14px; height: 14px; flex-shrink: 0; }
+.qt-titlebar-title {
+    flex: 1;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.qt-titlebar-btns { display: flex; gap: 6px; }
+.qt-btn {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    border: none; cursor: default;
+}
+.qt-btn-close  { background: #ff5f57; }
+.qt-btn-min    { background: #febc2e; }
+.qt-btn-max    { background: #28c840; }
+
+/* ── Login body ────────────────────────────────────────────── */
+.qt-body {
+    padding: 28px 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.qt-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.qt-brand-icon {
+    width: 48px; height: 48px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700;
+    color: var(--color-status-running);
+}
+.qt-brand-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    letter-spacing: 0.02em;
+}
+.qt-brand-sub {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: -4px;
+}
+
+/* ── Error box ─────────────────────────────────────────────── */
+.qt-error {
+    background: rgba(240,106,106,0.12);
+    border: 1px solid rgba(240,106,106,0.35);
+    border-radius: 3px;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--color-status-error);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.qt-error::before { content: '⚠'; font-size: 13px; }
+
+/* ── Form fields ───────────────────────────────────────────── */
+.qt-form { display: flex; flex-direction: column; gap: 12px; }
+
+.qt-field { display: flex; flex-direction: column; gap: 4px; }
+.qt-label {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.qt-input {
+    all: unset;
+    display: block;
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    background: var(--color-bg-input);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 13px;
+    transition: border-color 150ms;
+}
+.qt-input:focus {
+    border-color: var(--color-primary);
+    outline: none;
+}
+.qt-input::placeholder { color: var(--color-text-disabled); }
+
+/* ── Submit button ─────────────────────────────────────────── */
+.qt-submit {
+    all: unset;
+    display: block;
+    width: 100%;
+    height: 30px;
+    margin-top: 4px;
+    background: var(--color-btn-bg);
+    border: 1px solid var(--color-btn-border);
+    border-radius: 3px;
+    color: var(--color-text-inverse);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: background 120ms, border-color 120ms;
+}
+.qt-submit:hover    { background: var(--color-btn-hover); }
+.qt-submit:active   { background: var(--color-btn-pressed); }
+
+/* ── Status bar ────────────────────────────────────────────── */
+.qt-statusbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 22px;
+    padding: 0 10px;
+    background: var(--color-statusbar-bg);
+    color: var(--color-statusbar-text);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<div class="qt-window">
+
+    <!-- Title bar -->
+    <div class="qt-titlebar">
+        <img src="{% static 'common/icons/onesimus.svg' %}" class="qt-titlebar-icon" alt="">
+        <span class="qt-titlebar-title">Onesimus — Backup Management</span>
+        <div class="qt-titlebar-btns">
+            <span class="qt-btn qt-btn-close"></span>
+            <span class="qt-btn qt-btn-min"></span>
+            <span class="qt-btn qt-btn-max"></span>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="qt-body">
+
+        <!-- Branding -->
+        <div class="qt-brand">
+            <div class="qt-brand-icon">O</div>
+            <span class="qt-brand-name">Onesimus</span>
+            <span class="qt-brand-sub">Bareos Backup Management</span>
+        </div>
+
+        <!-- Error -->
+        {% if form.errors %}
+        <div class="qt-error">Invalid username or password.</div>
+        {% endif %}
+        {% if form.non_field_errors %}
+        <div class="qt-error">{{ form.non_field_errors|join:" " }}</div>
+        {% endif %}
+
+        <!-- Form -->
+        <form method="post" class="qt-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <div class="qt-field">
+                <label class="qt-label" for="id_username">Username</label>
+                <input class="qt-input" type="text" id="id_username"
+                       name="username" autocomplete="username"
+                       value="{{ form.username.value|default:'' }}"
+                       autofocus required>
+            </div>
+
+            <div class="qt-field">
+                <label class="qt-label" for="id_password">Password</label>
+                <input class="qt-input" type="password" id="id_password"
+                       name="password" autocomplete="current-password" required>
+            </div>
+
+            <button type="submit" class="qt-submit">Sign In</button>
+        </form>
+
+    </div>
+
+    <!-- Status bar -->
+    <div class="qt-statusbar">
+        <span>● Disconnected</span>
+        <span>Onesimus&nbsp;|&nbsp;GPL-3.0</span>
+    </div>
+
+</div>
+
+</body>
+</html>

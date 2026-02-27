@@ -27,5 +27,7 @@ urlpatterns = [
     path('schedules/', include('schedules.urls', namespace='schedules')),
     path('storage/', include('storage.urls', namespace='storage')),
     path('common/', include('common.urls', namespace='common')),
-    path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+    path('accounts/login/',  auth_views.LoginView.as_view(), name='login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/accounts/login/'), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='/accounts/login/'), name='logout-legacy'),
 ]
