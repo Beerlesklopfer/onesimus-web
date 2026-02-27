@@ -7,7 +7,8 @@
 #
 # Assumptions:
 #   - virtualenv at .venv/
-#   - systemd unit: onesimus.service  (sudo required for service commands)
+#   - systemd unit: contrib/onesimus.service  (sudo required for service commands)
+#   - nginx config: contrib/onesimus.nginx.conf
 #   - daphne binary at .venv/bin/daphne
 
 .DEFAULT_GOAL := help
