@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025-2026 Jörg Bernau <joerg.bernau@onesimus.io>
+# SPDX-License-Identifier: MIT
+
 """
 WebSocket consumers for real-time updates.
 Handles WebSocket connections and message broadcasting.

@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# SPDX-FileCopyrightText: 2025-2026 Jörg Bernau <joerg.bernau@onesimus.io>
+# SPDX-License-Identifier: MIT
+
 """Django's command-line utility for administrative tasks."""
 import os
 import sys

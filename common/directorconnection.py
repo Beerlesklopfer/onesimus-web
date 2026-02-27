@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025-2026 Jörg Bernau <joerg.bernau@onesimus.io>
+# SPDX-License-Identifier: MIT
+
 """
 Bareos Director Connection Wrapper
 

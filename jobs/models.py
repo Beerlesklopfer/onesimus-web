@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025-2026 Jörg Bernau <joerg.bernau@onesimus.io>
+# SPDX-License-Identifier: MIT
+
 """Job models for backup job tracking."""
 from django.db import models
 from clients.models import Client

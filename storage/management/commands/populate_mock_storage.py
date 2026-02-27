@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025-2026 Jörg Bernau <joerg.bernau@onesimus.io>
+# SPDX-License-Identifier: MIT
+
 """Management command to populate mock Storage, Pool and Volume records."""
 import hashlib
 from datetime import timedelta
