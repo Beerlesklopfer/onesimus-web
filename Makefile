@@ -1,49 +1,54 @@
 # ── Onesimus Web — Makefile ───────────────────────────────────────────────────
 #
-# First-time server setup:
-#   git clone <repo> /srv/onesimus-web && cd /srv/onesimus-web
+# First-time server setup (run as root or with sudo):
+#   git clone <repo> /root/onesimus-web && cd /root/onesimus-web
 #   sudo make sysdeps          (libpq-dev, python3-dev)
 #   sudo make install-system   (creates /srv/onesimus-web, /etc/onesimus/, systemd, nginx)
 #   make install migrate static superuser
 #   sudo make start
 #
-# Development:   make dev
 # Re-deploy:     make deploy       (install + migrate + static + restart)
 # Service:       make start / stop / restart / status / logs
+# Development:   make dev          (uses DEPLOY_DIR=. override automatically)
 #
-# Assumptions:
-#   - virtualenv at .venv/
-#   - systemd unit: contrib/onesimus.service  (sudo required for service commands)
-#   - nginx config: contrib/onesimus.nginx.conf
-#   - daphne binary at .venv/bin/daphne
+# All production targets install into /srv/onesimus-web.
+# For local development on another machine: make dev DEPLOY_DIR=.
 
 .DEFAULT_GOAL := help
-.PHONY: help venv sysdeps install install-dev install-prod \
+.PHONY: help venv sysdeps install install-dev \
         install-system \
-        migrate static superuser \
+        migrate static superuser mockdata \
         dev run \
         deploy \
         start stop restart status logs \
         lint test clean
 
-PY      := .venv/bin/python
-PIP     := .venv/bin/pip
-MANAGE  := $(PY) manage.py
-SERVICE := onesimus
-DEPLOY_DIR := $(shell pwd)
+DEPLOY_DIR  := /srv/onesimus-web
+PY          := $(DEPLOY_DIR)/.venv/bin/python
+PIP         := $(DEPLOY_DIR)/.venv/bin/pip
+MANAGE      := $(PY) manage.py
+SERVICE     := onesimus
 NGINX_AVAIL := /etc/nginx/sites-available/$(SERVICE)
 
 
-# ── Virtualenv ────────────────────────────────────────────────────────────────
+# ── System dependencies ───────────────────────────────────────────────────────
 
 sysdeps:                           ## Install system build dependencies (requires sudo)
 	sudo apt-get install -y libpq-dev python3-dev
 
-venv:                              ## Create virtualenv (if missing)
-	@if [ ! -d .venv ]; then \
-		python3 -m venv .venv; \
+
+# ── Virtualenv ────────────────────────────────────────────────────────────────
+
+venv:                              ## Create virtualenv at $(DEPLOY_DIR)/.venv
+	@if [ ! -d "$(DEPLOY_DIR)" ]; then \
+		echo "  ERROR: $(DEPLOY_DIR) does not exist."; \
+		echo "  Run 'sudo make install-system' first."; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(DEPLOY_DIR)/.venv" ]; then \
+		python3 -m venv $(DEPLOY_DIR)/.venv; \
 		$(PIP) install -q --upgrade pip setuptools wheel; \
-		echo "  venv created."; \
+		echo "  venv created at $(DEPLOY_DIR)/.venv"; \
 	else \
 		echo "  venv already exists."; \
 	fi
@@ -51,13 +56,18 @@ venv:                              ## Create virtualenv (if missing)
 install: venv                      ## Install production dependencies
 	$(PIP) install -q -r requirements-prod.txt
 
-install-dev: venv                  ## Install development dependencies
-	$(PIP) install -q -r requirements-dev.txt
+install-dev:                       ## Install dev dependencies into local .venv
+	@if [ ! -d .venv ]; then \
+		python3 -m venv .venv; \
+		.venv/bin/pip install -q --upgrade pip setuptools wheel; \
+		echo "  dev venv created."; \
+	fi
+	.venv/bin/pip install -q -r requirements-dev.txt
 
 install-system:                    ## Create /srv/onesimus-web, install systemd unit + nginx (requires sudo)
-	@echo "  [dir] creating /srv/onesimus-web …"
-	sudo mkdir -p /srv/onesimus-web
-	sudo chown www-data:www-data /srv/onesimus-web
+	@echo "  [dir] creating $(DEPLOY_DIR) …"
+	sudo mkdir -p $(DEPLOY_DIR)
+	sudo chown www-data:www-data $(DEPLOY_DIR)
 	@echo "  [env] creating /etc/onesimus/ …"
 	sudo mkdir -p /etc/onesimus
 	@if [ ! -f /etc/onesimus/onesimus.env ]; then \
@@ -119,11 +129,17 @@ mockdata:                          ## Populate mock data (jobs, schedules, files
 
 # ── Development server ────────────────────────────────────────────────────────
 
-dev: install-dev migrate superuser ## Full dev setup + run daphne (DEBUG=true)
+dev: install-dev                   ## Full dev setup + run daphne locally (DEBUG=true, uses .venv)
+	.venv/bin/python manage.py migrate --noinput
+	@.venv/bin/python manage.py shell -c "\
+from django.contrib.auth.models import User; \
+User.objects.filter(username='admin').exists() \
+  or User.objects.create_superuser('admin','admin@example.local','admin')" \
+	&& echo "  superuser ready (admin / admin)"
 	DJANGO_DEBUG=true .venv/bin/daphne -b 0.0.0.0 -p 8888 onesimus.asgi:application
 
-run:                               ## Run daphne (no setup, uses current env)
-	.venv/bin/daphne -b 0.0.0.0 -p 8888 onesimus.asgi:application
+run:                               ## Run daphne from $(DEPLOY_DIR) (no setup)
+	$(DEPLOY_DIR)/.venv/bin/daphne -b 0.0.0.0 -p 8888 onesimus.asgi:application
 
 
 # ── Deployment ────────────────────────────────────────────────────────────────
@@ -164,8 +180,8 @@ test:                              ## Run Django test suite
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 
-clean:                             ## Remove .venv, staticfiles, __pycache__
-	rm -rf .venv staticfiles
+clean:                             ## Remove $(DEPLOY_DIR)/.venv, staticfiles, __pycache__
+	rm -rf $(DEPLOY_DIR)/.venv $(DEPLOY_DIR)/staticfiles
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -name '*.pyc' -delete 2>/dev/null || true
 
@@ -178,4 +194,6 @@ help:
 	@echo ""
 	@grep -E '^[a-z][a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
 		awk 'BEGIN{FS=":[^#]*## "} {printf "    make \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "  Production deploy dir: $(DEPLOY_DIR)"
 	@echo ""
